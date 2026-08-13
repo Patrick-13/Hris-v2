@@ -1,0 +1,365 @@
+import Pagination from "@/Components/Pagination";
+import TextInput from "@/Components/TextInput";
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import { Head, Link, router } from "@inertiajs/react";
+import TableHeading from "@/Components/TableHeading";
+import { FaTrashAlt, FaPlus, FaPencilAlt } from "react-icons/fa";
+import { useState } from "react";
+import { CiFilter } from "react-icons/ci";
+import Modal from "@/Components/Modal";
+import Create from "./Modal/Create";
+import Edit from "./Modal/Edit";
+export default function Index({
+    memos,
+    memoedits,
+    queryParams = null,
+    totalCount,
+    currentPageCount,
+    currentPage,
+}) {
+    queryParams = queryParams || {};
+    const [shown, setShown] = useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const toggleDropdown = () => setShowDropdown(!showDropdown);
+    const [showModal, setShowModal] = useState(false);
+    const [showModalEdit, setShowModalEdit] = useState(false);
+    const [selectedMemo, setSelectedMemo] = useState(memoedits || null);
+
+    const handleEditClick = async (memoId) => {
+        try {
+            const response = await axios.get(`/admin/memo/${memoId}/edit`);
+            setSelectedMemo(response.data); // Set the fetched product data
+            setShowModalEdit(true); // Open the modal
+        } catch (error) {
+            console.error("Error fetching product data:", error);
+        }
+    };
+
+    const searchFieldChanged = (field, value) => {
+        const updatedQueryParams = { ...queryParams };
+        if (value) {
+            updatedQueryParams[field] = value; // Use field instead of agencyName
+        } else {
+            delete updatedQueryParams[field]; // Use field instead of agencyName
+        }
+        router.replace(route("memo.index"), {
+            method: "get",
+            data: updatedQueryParams,
+        });
+    };
+
+    const onKeyPress = (name, e) => {
+        if (e.key !== "Enter") return;
+
+        searchFieldChanged(name, e.target.value);
+    };
+
+    const sortChanged = (name) => {
+        if (name === queryParams.sort_field) {
+            if (queryParams.sort_direction === "asc") {
+                queryParams.sort_direction = "desc";
+            } else {
+                queryParams.sort_direction = "asc";
+            }
+        } else {
+            queryParams.sort_field = name;
+            queryParams.sort_direction = "asc";
+        }
+        router.get(route("memo.index"), queryParams);
+    };
+
+    const deleteLeavetype = (memo) => {
+        if (
+            !window.confirm(
+                `are you sure you want to delete the ${memo.title}?`,
+            )
+        ) {
+            return;
+        }
+        router.delete(route("memo.destroy", memo.id));
+    };
+
+    return (
+        <AuthenticatedLayout
+            header={
+                <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
+                    Memo's
+                </h2>
+            }
+        >
+            <Head title="Memo" />
+
+            <div className="py-2">
+                <div className="max-w-9xl mx-auto sm:px-6 lg:px-8">
+                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                        <div className="p-6 text-gray-900 dark:text-gray-100">
+                            <div className="overflow-auto">
+                                <div className="relative flex flex-col gap-4 mb-5">
+                                    <div className="flex justify-between items-center gap-4">
+                                        <div className="relative flex items-center gap-2">
+                                            <div className="relative inline-block">
+                                                <button
+                                                    onClick={toggleDropdown}
+                                                    className="max-w-9xl mx-auto sm:px-6 lg:px-8 bg-gray-400 py-1 px-3 text-white rounded shadow transition-all hover:bg-gray-600 flex items-center gap-1 sm:w-auto"
+                                                >
+                                                    <CiFilter size={18} />
+                                                    <span>Filters</span>
+                                                </button>
+                                            </div>
+                                            {showDropdown && (
+                                                <div
+                                                    className="absolute  top-full left-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-4 shadow-lg transition-opacity duration-300 opacity-100"
+                                                    style={{
+                                                        maxHeight:
+                                                            "calc(100vh - 64px)",
+                                                    }}
+                                                >
+                                                    <div className="flex flex-col gap-4">
+                                                        <TextInput
+                                                            className="w-full"
+                                                            defaultValue={
+                                                                queryParams.name
+                                                            }
+                                                            placeholder="Search Memo"
+                                                            onBlur={(e) =>
+                                                                searchFieldChanged(
+                                                                    "name",
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            onKeyPress={(e) =>
+                                                                onKeyPress(
+                                                                    "name",
+                                                                    e,
+                                                                )
+                                                            }
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <button
+                                                onClick={() =>
+                                                    setShowModal(true)
+                                                }
+                                                className="max-w-9xl mx-auto sm:px-6 lg:px-8 bg-emerald-500 py-1 px-3 text-white rounded shadow transition-all hover:bg-emerald-600 flex items-center gap-1"
+                                            >
+                                                <FaPlus size={14} />
+                                                <span>New</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <div className="md:h-[400px] lg:h-[500px] overflow-y-auto">
+                                        <table className="w-full text-sm text-left trl:text-right text-gray-500 dark:text-gray-400">
+                                            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 border-b-2 border-gray-500">
+                                                <tr className="text-nowrap">
+                                                    <TableHeading
+                                                        name="memo_number"
+                                                        sort_field={
+                                                            queryParams.sort_field
+                                                        }
+                                                        sort_direction={
+                                                            queryParams.sort_direction
+                                                        }
+                                                        sortChanged={
+                                                            sortChanged
+                                                        }
+                                                    >
+                                                        Memo #
+                                                    </TableHeading>
+                                                    <TableHeading
+                                                        name="date_from"
+                                                        sort_field={
+                                                            queryParams.sort_field
+                                                        }
+                                                        sort_direction={
+                                                            queryParams.sort_direction
+                                                        }
+                                                        sortChanged={
+                                                            sortChanged
+                                                        }
+                                                    >
+                                                        From
+                                                    </TableHeading>
+                                                    <TableHeading
+                                                        name="date_to"
+                                                        sort_field={
+                                                            queryParams.sort_field
+                                                        }
+                                                        sort_direction={
+                                                            queryParams.sort_direction
+                                                        }
+                                                        sortChanged={
+                                                            sortChanged
+                                                        }
+                                                    >
+                                                        To
+                                                    </TableHeading>
+                                                    <TableHeading
+                                                        name="title"
+                                                        sort_field={
+                                                            queryParams.sort_field
+                                                        }
+                                                        sort_direction={
+                                                            queryParams.sort_direction
+                                                        }
+                                                        sortChanged={
+                                                            sortChanged
+                                                        }
+                                                    >
+                                                        Title
+                                                    </TableHeading>
+                                                    <TableHeading
+                                                        name="status"
+                                                        sort_field={
+                                                            queryParams.sort_field
+                                                        }
+                                                        sort_direction={
+                                                            queryParams.sort_direction
+                                                        }
+                                                        sortChanged={
+                                                            sortChanged
+                                                        }
+                                                    >
+                                                        Status
+                                                    </TableHeading>
+                                                    <TableHeading
+                                                        name="provinces"
+                                                        sort_field={
+                                                            queryParams.sort_field
+                                                        }
+                                                        sort_direction={
+                                                            queryParams.sort_direction
+                                                        }
+                                                        sortChanged={
+                                                            sortChanged
+                                                        }
+                                                    >
+                                                        provinces
+                                                    </TableHeading>
+
+                                                    <th className="px-3 py-2">
+                                                        Actions
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {memos &&
+                                                memos.data.length > 0 ? (
+                                                    memos.data.map((memo) => (
+                                                        <tr
+                                                            className="bg-white border-b dark:bg-gray-800 dark:border-gray-700"
+                                                            key={memo.id}
+                                                        >
+                                                            <td className="px-3 py-2">
+                                                                {
+                                                                    memo.memo_number
+                                                                }
+                                                            </td>
+                                                            <td className="px-3 py-2">
+                                                                {memo.date_from}
+                                                            </td>
+                                                            <td className="px-3 py-2">
+                                                                {memo.date_to}
+                                                            </td>
+                                                            <td className="px-3 py-2">
+                                                                {memo.title}
+                                                            </td>
+
+                                                            <td className="px-3 py-2">
+                                                                {memo.status}
+                                                            </td>
+
+                                                            <td className="px-3 py-2">
+                                                                {memo.provinces?.join(
+                                                                    ", ",
+                                                                )}
+                                                            </td>
+
+                                                            <td className="px-3 py-2 flex text-nowrap">
+                                                                <button
+                                                                    onClick={() =>
+                                                                        handleEditClick(
+                                                                            memo.id,
+                                                                        )
+                                                                    }
+                                                                    className="font-medium text-blue dark:text-blue-500 hover:underline mx-1"
+                                                                >
+                                                                    <FaPencilAlt
+                                                                        className="text-green-500"
+                                                                        size={
+                                                                            18
+                                                                        }
+                                                                    />
+                                                                </button>
+
+                                                                <button
+                                                                    onClick={(
+                                                                        e,
+                                                                    ) =>
+                                                                        deleteLeavetype(
+                                                                            memo,
+                                                                        )
+                                                                    }
+                                                                    className="font-medium text-red-600 dark:text-red-500 hover:underline mx-1"
+                                                                >
+                                                                    <FaTrashAlt
+                                                                        className="text-red-600"
+                                                                        size={
+                                                                            18
+                                                                        }
+                                                                    />
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td
+                                                            colSpan="11"
+                                                            className="text-center py-4"
+                                                        >
+                                                            No data available
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                        <Pagination
+                                            links={memos && memos.meta.links}
+                                            totalCount={totalCount}
+                                            currentPageCount={currentPageCount}
+                                            currentPage={currentPage}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <Modal
+                        show={showModal}
+                        onClose={() => setShowModal(false)}
+                        closeable={true}
+                        maxWidth="2xl" // ← use this to expand the modal
+                    >
+                        <Create closeModal={() => setShowModal(false)} />
+                    </Modal>
+
+                    <Modal
+                        show={showModalEdit}
+                        onClose={() => setShowModalEdit(false)}
+                        closeable={true}
+                        maxWidth="2xl" // ← use this to expand the modal
+                    >
+                        <Edit
+                            memo={selectedMemo}
+                            closeModal={() => setShowModalEdit(false)}
+                        />
+                    </Modal>
+                </div>
+            </div>
+        </AuthenticatedLayout>
+    );
+}

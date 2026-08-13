@@ -1,0 +1,335 @@
+import Pagination from "@/Components/Pagination";
+import TextInput from "@/Components/TextInput";
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import { Head, Link, router } from "@inertiajs/react";
+import TableHeading from "@/Components/TableHeading";
+import { FaTrashAlt, FaPlus, FaPencilAlt } from "react-icons/fa";
+import { useState } from "react";
+import { CiFilter } from "react-icons/ci";
+import Modal from "@/Components/Modal";
+import Create from "./Modal/Create";
+import Edit from "./Modal/Edit";
+export default function Index({
+    modules,
+    submodules,
+    submoduleedits,
+    queryParams = null,
+    totalCount,
+    currentPageCount,
+    currentPage,
+}) {
+    console.log(submodules);
+    queryParams = queryParams || {};
+    const [shown, setShown] = useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const toggleDropdown = () => setShowDropdown(!showDropdown);
+    const [showModal, setShowModal] = useState(false);
+    const [showModalEdit, setShowModalEdit] = useState(false);
+    const [selectedSubmodule, setSelectedSubmodule] = useState(
+        submoduleedits || null
+    );
+
+    const handleEditClick = async (submoduleId) => {
+        try {
+            const response = await axios.get(
+                `/admin/submodule/${submoduleId}/edit`
+            );
+            setSelectedSubmodule(response.data); // Set the fetched product data
+            console.log(response.data);
+            setShowModalEdit(true); // Open the modal
+        } catch (error) {
+            console.error("Error fetching product data:", error);
+        }
+    };
+
+    const searchFieldChanged = (field, value) => {
+        const updatedQueryParams = { ...queryParams };
+        if (value) {
+            updatedQueryParams[field] = value; // Use field instead of agencyName
+        } else {
+            delete updatedQueryParams[field]; // Use field instead of agencyName
+        }
+        console.log("Updated Query Params:", updatedQueryParams); // Log updated query params
+        router.replace(route("submodule.index"), {
+            method: "get",
+            data: updatedQueryParams,
+        });
+    };
+
+    const onKeyPress = (submoduleName, e) => {
+        if (e.key !== "Enter") return;
+
+        searchFieldChanged(submoduleName, e.target.value);
+    };
+
+    const sortChanged = (submoduleName) => {
+        if (submoduleName === queryParams.sort_field) {
+            if (queryParams.sort_direction === "asc") {
+                queryParams.sort_direction = "desc";
+            } else {
+                queryParams.sort_direction = "asc";
+            }
+        } else {
+            queryParams.sort_field = submoduleName;
+            queryParams.sort_direction = "asc";
+        }
+        router.get(route("submodule.index"), queryParams);
+    };
+
+    const deleteSubModule = (submodule) => {
+        if (
+            !window.confirm(
+                `are you sure you want to delete the ${submodule.submoduleName} Sub Module?`
+            )
+        ) {
+            return;
+        }
+        router.delete(route("submodule.destroy", submodule.id));
+    };
+
+    return (
+        <AuthenticatedLayout
+            header={
+                <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
+                    Sub Module
+                </h2>
+            }
+        >
+            <Head title="Sub Module" />
+
+            <div className="py-2">
+                <div className="max-w-9xl mx-auto sm:px-6 lg:px-8">
+                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                        <div className="p-6 text-gray-900 dark:text-gray-100">
+                            <div className="overflow-auto">
+                                <div className="relative flex flex-col gap-4 mb-5">
+                                    <div className="flex justify-between items-center gap-4">
+                                        <div className="relative flex items-center gap-2">
+                                            <div className="relative inline-block">
+                                                <button
+                                                    onClick={toggleDropdown}
+                                                    className="max-w-9xl mx-auto sm:px-6 lg:px-8 bg-gray-400 py-1 px-3 text-white rounded shadow transition-all hover:bg-gray-600 flex items-center gap-1 sm:w-auto"
+                                                >
+                                                    <CiFilter size={18} />
+                                                    <span>Filters</span>
+                                                </button>
+                                            </div>
+                                            {showDropdown && (
+                                                <div
+                                                    className="absolute  top-full left-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-4 shadow-lg transition-opacity duration-300 opacity-100"
+                                                    style={{
+                                                        maxHeight:
+                                                            "calc(100vh - 64px)",
+                                                    }}
+                                                >
+                                                    <div className="flex flex-col gap-4">
+                                                        <TextInput
+                                                            className="w-full"
+                                                            defaultValue={
+                                                                queryParams.submoduleName
+                                                            }
+                                                            placeholder="Search Section"
+                                                            onBlur={(e) =>
+                                                                searchFieldChanged(
+                                                                    "submoduleName",
+                                                                    e.target
+                                                                        .value
+                                                                )
+                                                            }
+                                                            onKeyPress={(e) =>
+                                                                onKeyPress(
+                                                                    "submoduleName",
+                                                                    e
+                                                                )
+                                                            }
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <button
+                                                onClick={() =>
+                                                    setShowModal(true)
+                                                }
+                                                className="max-w-9xl mx-auto sm:px-6 lg:px-8 bg-emerald-500 py-1 px-3 text-white rounded shadow transition-all hover:bg-emerald-600 flex items-center gap-1"
+                                            >
+                                                <FaPlus size={14} />
+                                                <span>New</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <div className="md:h-[400px] lg:h-[500px] overflow-y-auto">
+                                        <table className="w-full text-sm text-left trl:text-right text-gray-500 dark:text-gray-400">
+                                            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 border-b-2 border-gray-500">
+                                                <tr className="text-nowrap">
+                                                    <TableHeading
+                                                        name="id"
+                                                        sort_field={
+                                                            queryParams.sort_field
+                                                        }
+                                                        sort_direction={
+                                                            queryParams.sort_direction
+                                                        }
+                                                        sortChanged={
+                                                            sortChanged
+                                                        }
+                                                    >
+                                                        ID
+                                                    </TableHeading>
+                                                    <TableHeading
+                                                        name="submoduleName"
+                                                        sort_field={
+                                                            queryParams.sort_field
+                                                        }
+                                                        sort_direction={
+                                                            queryParams.sort_direction
+                                                        }
+                                                        sortChanged={
+                                                            sortChanged
+                                                        }
+                                                    >
+                                                        SubModule Name
+                                                    </TableHeading>
+                                                    <TableHeading
+                                                        name="module_id"
+                                                        sort_field={
+                                                            queryParams.sort_field
+                                                        }
+                                                        sort_direction={
+                                                            queryParams.sort_direction
+                                                        }
+                                                        sortChanged={
+                                                            sortChanged
+                                                        }
+                                                    >
+                                                        Module Name
+                                                    </TableHeading>
+
+                                                    <th className="px-3 py-2">
+                                                        Actions
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {submodules &&
+                                                submodules.data.length > 0 ? (
+                                                    submodules.data.map(
+                                                        (submodule) => (
+                                                            <tr
+                                                                className="bg-white border-b dark:bg-gray-800 dark:border-gray-700"
+                                                                key={
+                                                                    submodule.id
+                                                                }
+                                                            >
+                                                                <td className="px-3 py-2">
+                                                                    {
+                                                                        submodule.id
+                                                                    }
+                                                                </td>
+                                                                <td className="px-3 py-2">
+                                                                    {
+                                                                        submodule.submoduleName
+                                                                    }
+                                                                </td>
+                                                                <td className="px-3 py-2">
+                                                                    {
+                                                                        submodule
+                                                                            .moduleBy
+                                                                            ?.moduleName
+                                                                    }
+                                                                </td>
+
+                                                                <td className="px-3 py-2 flex text-nowrap">
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            handleEditClick(
+                                                                                submodule.id
+                                                                            )
+                                                                        }
+                                                                        className="font-medium text-blue dark:text-blue-500 hover:underline mx-1"
+                                                                    >
+                                                                        <FaPencilAlt
+                                                                            className="text-green-500"
+                                                                            size={
+                                                                                18
+                                                                            }
+                                                                        />
+                                                                    </button>
+
+                                                                    <button
+                                                                        onClick={(
+                                                                            e
+                                                                        ) =>
+                                                                            deleteSubModule(
+                                                                                submodule
+                                                                            )
+                                                                        }
+                                                                        className="font-medium text-red-600 dark:text-red-500 hover:underline mx-1"
+                                                                    >
+                                                                        <FaTrashAlt
+                                                                            className="text-red-600"
+                                                                            size={
+                                                                                18
+                                                                            }
+                                                                        />
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        )
+                                                    )
+                                                ) : (
+                                                    <tr>
+                                                        <td
+                                                            colSpan="11"
+                                                            className="text-center py-4"
+                                                        >
+                                                            No data available
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                        <Pagination
+                                            links={
+                                                submodules &&
+                                                submodules.meta.links
+                                            }
+                                            totalCount={totalCount}
+                                            currentPageCount={currentPageCount}
+                                            currentPage={currentPage}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <Modal
+                        show={showModal}
+                        onClose={() => setShowModal(false)}
+                        closeable={true}
+                        maxWidth="4xl" // ← use this to expand the modal
+                    >
+                        <Create
+                            modules={modules}
+                            closeModal={() => setShowModal(false)}
+                        />
+                    </Modal>
+
+                    <Modal
+                        show={showModalEdit}
+                        onClose={() => setShowModalEdit(false)}
+                        closeable={true}
+                        maxWidth="4xl" // ← use this to expand the modal
+                    >
+                        <Edit
+                            modules={modules}
+                            submodules={selectedSubmodule}
+                            closeModal={() => setShowModalEdit(false)}
+                        />
+                    </Modal>
+                </div>
+            </div>
+        </AuthenticatedLayout>
+    );
+}

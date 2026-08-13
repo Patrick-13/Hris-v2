@@ -21,7 +21,7 @@ class EmployeeLeaveController extends Controller
 
     public function index()
     {
-        $user = auth()->user();
+        $user = auth()->user(); // ✅ Get logged-in user
 
 
         $query = PersonnelLeave::with(['employeeBy', 'leaveType']);
@@ -39,9 +39,9 @@ class EmployeeLeaveController extends Controller
             });
         }
 
+
         $sortField = request("sort_field", "created_at");
         $sortDirection = request("sort_direction", "desc");
-
 
 
         // ✅ If the logged-in user is not admin, filter by their employee_id
@@ -52,17 +52,136 @@ class EmployeeLeaveController extends Controller
                 ->where('employee_id', '!=', $user->employee_id); // ← exclude own leave
         }
 
-        $personneleave = $query
-            ->with(['employeeBy', 'leaveType', 'approvals.approver']) // ✅ eager load relations
+        $pendingQuery = clone $query;
+        $approvedQuery = clone $query;
+        $waitingQuery = clone $query;
+        $rejectedQuery = clone $query;
+
+        //pending query
+        $personneleave = $pendingQuery
+            ->whereHas('approvals', function ($q) use ($user) {
+                $q->where('status', 'Pending');
+            })
+            ->with([
+                'employeeBy',
+                'leaveType',
+                'approvals.approver',
+            ])
             ->orderBy($sortField, $sortDirection)
-            ->paginate(10)
+            ->paginate(
+                10,
+                ['*'],
+                'pending_page'
+            )
             ->onEachSide(1);
 
-        $personneleave->appends(request()->only(['search', 'sort_field', 'sort_direction']));
+        $personneleave->appends(
+            request()->only([
+                'search',
+                'sort_field',
+                'sort_direction',
+                'tab',
+                'pending_page', // preserve the other paginator
+            ])
+        );
 
         $totalCount = $personneleave->total();
         $currentPageCount = $personneleave->count();
         $currentPage = $personneleave->currentPage();
+
+        //waiting query
+        $personneleavewaiting = $waitingQuery
+            ->whereHas('approvals', function ($q) use ($user) {
+                $q->where('status', 'Waiting');
+            })
+            ->with([
+                'employeeBy',
+                'leaveType',
+                'approvals.approver',
+            ])
+            ->orderBy($sortField, $sortDirection)
+            ->paginate(
+                10,
+                ['*'],
+                'waiting_page'
+            )
+            ->onEachSide(1);
+
+        $personneleavewaiting->appends(
+            request()->only([
+                'search',
+                'sort_field',
+                'sort_direction',
+                'tab',
+                'waiting_page', // preserve the other paginator
+            ])
+        );
+
+        $totalCountwaiting = $personneleavewaiting->total();
+        $currentPageCountwaiting = $personneleavewaiting->count();
+        $currentPagewaiting = $personneleavewaiting->currentPage();
+
+        //approved query
+        $personneleaveapproved = $approvedQuery
+            ->where('request_status', 'approved')
+            ->with([
+                'employeeBy',
+                'leaveType',
+                'approvals.approver',
+            ])
+            ->orderBy($sortField, $sortDirection)
+            ->paginate(
+                10,
+                ['*'],
+                'approved_page'
+            )
+            ->onEachSide(1);
+
+        $personneleaveapproved->appends(
+            request()->only([
+                'search',
+                'sort_field',
+                'sort_direction',
+                'tab',
+                'approved_page', // preserve the other paginator
+            ])
+        );
+
+        $totalCountapproved = $personneleaveapproved->total();
+        $currentPageCountapproved = $personneleaveapproved->count();
+        $currentPageapproved = $personneleaveapproved->currentPage();
+
+        //rejected query
+        $personneleaverejected = $rejectedQuery
+            ->whereHas('approvals', function ($q) use ($user) {
+                $q->where('status', 'rejected');
+            })
+            ->with([
+                'employeeBy',
+                'leaveType',
+                'approvals.approver',
+            ])
+            ->orderBy($sortField, $sortDirection)
+            ->paginate(
+                10,
+                ['*'],
+                'rejected_page'
+            )
+            ->onEachSide(1);
+
+        $personneleaverejected->appends(
+            request()->only([
+                'search',
+                'sort_field',
+                'sort_direction',
+                'tab',
+                'rejected_page', // preserve the other paginator
+            ])
+        );
+
+        $totalCountrejected = $personneleaverejected->total();
+        $currentPageCountrejected = $personneleaverejected->count();
+        $currentPagerejected = $personneleaverejected->currentPage();
 
         $leavetypes = LeaveType::all();
 
@@ -79,6 +198,9 @@ class EmployeeLeaveController extends Controller
 
         return inertia("Admin/PersonelLeave/Index", [
             "personneleaves" => PersonnelLeaveResource::collection($personneleave),
+            "personneleaveapproved" => PersonnelLeaveResource::collection($personneleaveapproved),
+            "personneleavewaiting" => PersonnelLeaveResource::collection($personneleavewaiting),
+            "personneleaverejected" => PersonnelLeaveResource::collection($personneleaverejected),
             'leavetypes' => $leavetypes,
             'activitytypes' => $activitytypes,
             'queryParams' => request()->query() ?: null,
@@ -86,6 +208,15 @@ class EmployeeLeaveController extends Controller
             'totalCount' => $totalCount,
             'currentPageCount' => $currentPageCount,
             'currentPage' => $currentPage,
+            'totalCountwaiting' => $totalCountwaiting,
+            'currentPageCountwaiting' => $currentPageCountwaiting,
+            'currentPagewaiting' => $currentPagewaiting,
+            'totalCountapproved' => $totalCountapproved,
+            'currentPageCountapproved' => $currentPageCountapproved,
+            'currentPageapproved' => $currentPageapproved,
+            'totalCountrejected' => $totalCountrejected,
+            'currentPageCountrejected' => $currentPageCountrejected,
+            'currentPagerejected' => $currentPagerejected,
         ]);
     }
 }

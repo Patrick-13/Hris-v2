@@ -357,7 +357,7 @@ const Pending = ({
                                                 )}
                                             </td>
                                             <td className="px-3 py-2 flex text-nowrap">
-                                                <button
+                                                <OvertimeActions
                                                     personnelovertime={
                                                         personnelovertime
                                                     }
@@ -375,10 +375,9 @@ const Pending = ({
                                                         );
                                                         setHistoryOpen(true);
                                                     }}
-                                                    className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
+                                                    className="font-medium hover:underline mx-1"
                                                 >
-                                                    <History className="h-5 w-5" />
-                                                    <span className="pointer-events-none absolute right-0 top-full z-50 mt-2 whitespace-nowrap rounded-md bg-gray-800 px-2.5 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                                                    <span className="text-blue-500">
                                                         History
                                                     </span>
                                                 </button>

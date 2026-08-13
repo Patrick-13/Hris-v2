@@ -1,4 +1,4 @@
-import { FaEllipsisV, FaPlusCircle } from "react-icons/fa";
+import { FaPlusCircle } from "react-icons/fa";
 
 export default function OvertimeActions({
     personnelovertime,
@@ -23,13 +23,13 @@ export default function OvertimeActions({
 
     // assuming regional is the final approver
     const isFinalApproved = approvals.some(
-        (a) => a.level === "rd" && a.status === "approved"
+        (a) => a.level === "rd" && a.status === "approved",
     );
 
     const canEdit = isOwner && hasAnyReturned && !hasAnyApproved;
 
     const canApprove = approvals.some(
-        (a) => a.approver_id === userId && a.status !== "approved"
+        (a) => a.approver_id === userId && a.status !== "approved",
     );
 
     const canAttach = isFinalApproved && !hasAccomplishment;
@@ -40,20 +40,12 @@ export default function OvertimeActions({
         <td className="px-3 py-2 flex text-nowrap">
             {/* APPROVE */}
             {canApprove && (
-                <div className="group relative">
-                    <button
-                        type="button"
-                        onClick={() => onApprove(personnelovertime.id)}
-                        className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
-                    >
-                        <FaEllipsisV className="h-5 w-5" />
-                    </button>
-
-                    {/* Tooltip */}
-                    <span className="pointer-events-none absolute right-0 top-full z-50 mt-2 whitespace-nowrap rounded-md bg-gray-800 px-2.5 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                        Take Action
-                    </span>
-                </div>
+                <button
+                    onClick={() => onApprove(personnelovertime.id)}
+                    className="font-medium hover:underline mx-1"
+                >
+                    <span className="text-blue-500">Approve</span>
+                </button>
             )}
 
             {/* Attach */}

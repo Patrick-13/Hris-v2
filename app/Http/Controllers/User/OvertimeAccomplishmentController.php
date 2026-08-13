@@ -58,6 +58,7 @@ class OvertimeAccomplishmentController extends Controller
         $waitingQuery = clone $query;
         $approvedQuery = clone $query;
         $resubmittedQuery = clone $query;
+        $returnedQuery = clone $query;
 
         //pending query
         $aropending = $pendingQuery
@@ -115,7 +116,7 @@ class OvertimeAccomplishmentController extends Controller
             ])
         );
 
-        //waiting query
+        //approved query
         $aroapproved = $approvedQuery
             ->whereHas('approvals', function ($q) use ($user) {
                 $q->where('status', 'approved')
@@ -140,6 +141,34 @@ class OvertimeAccomplishmentController extends Controller
                 'sort_direction',
                 'tab',
                 'approved_page', // preserve the other paginator
+            ])
+        );
+
+        //returned query
+        $aroreturned = $returnedQuery
+            ->whereHas('approvals', function ($q) use ($user) {
+                $q->where('status', 'returned')
+                    ->where('approver_id', $user->employee_id);
+            })
+            ->with([
+                'overtime.employeeBy',
+                'approvals.approver',
+            ])
+            ->orderBy($sortField, $sortDirection)
+            ->paginate(
+                10,
+                ['*'],
+                'returned_page'
+            )
+            ->onEachSide(1);
+
+        $aroreturned->appends(
+            request()->only([
+                'search',
+                'sort_field',
+                'sort_direction',
+                'tab',
+                'returned_page',
             ])
         );
 
@@ -184,6 +213,10 @@ class OvertimeAccomplishmentController extends Controller
         $currentPageCountapproved = $aroapproved->count();
         $currentPageapproved = $aroapproved->currentPage();
 
+        $totalCountreturned = $aroreturned->total();
+        $currentPageCountreturned = $aroreturned->count();
+        $currentPagereturned = $aroreturned->currentPage();
+
         $totalCountresubmitted = $aroresubmitted->total();
         $currentPageCountresubmitted = $aroresubmitted->count();
         $currentPageresubmitted = $aroresubmitted->currentPage();
@@ -193,6 +226,7 @@ class OvertimeAccomplishmentController extends Controller
             "personnelaccomplishments" => OvertimeAccomplishmentResource::collection($aropending),
             "personnelaccomplishmentwaiting" => OvertimeAccomplishmentResource::collection($arowaiting),
             "personnelaccomplishmentapproved" => OvertimeAccomplishmentResource::collection($aroapproved),
+            "personnelaccomplishmentreturned" => OvertimeAccomplishmentResource::collection($aroreturned),
             "personnelaccomplishmentresubmitted" => OvertimeAccomplishmentResource::collection($aroresubmitted),
             'queryParams' => request()->query() ?: null,
             'success' => session('success'),
@@ -209,6 +243,9 @@ class OvertimeAccomplishmentController extends Controller
             'currentPageCountapproved' => $currentPageCountapproved,
             'currentPageapproved' => $currentPageapproved,
 
+            'totalCountreturned' => $totalCountreturned,
+            'currentPageCountreturned' => $currentPageCountreturned,
+            'currentPagereturned' => $currentPagereturned,
 
             'totalCountresubmitted' => $totalCountresubmitted,
             'currentPageCountresubmitted' => $currentPageCountresubmitted,

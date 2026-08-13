@@ -279,15 +279,18 @@ class EmployeeOvertimeController extends Controller
 
     public function bulkApprove(Request $request)
     {
+     
+        $remarks = $request->input('remarks');
+
         $validated = $request->validate([
             'ids' => 'required|array|min:1',
             'ids.*' => 'exists:personnelovertimes,id',
         ]);
 
-        DB::transaction(function () use ($validated) {
+        DB::transaction(function () use ($validated, $remarks) {
             foreach ($validated['ids'] as $overtimeId) {
                 // approve only at current user's level
-                $this->employeeOvertimeService->approveOvertime($overtimeId, 'approved');
+                $this->employeeOvertimeService->approveOvertime($overtimeId, 'approved', $remarks);
             }
         });
 

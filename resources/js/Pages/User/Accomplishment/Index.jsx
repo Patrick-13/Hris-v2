@@ -7,6 +7,7 @@ import { onlyMapAro } from "@/constant";
 import Waiting from "./Tabs/Waiting";
 import Approved from "./Tabs/Approved";
 import Resubmitted from "./Tabs/Resubmitted";
+import Returned from "./Tabs/Returned";
 
 export default function Index({
     auth,
@@ -14,6 +15,7 @@ export default function Index({
     personnelaccomplishmentwaiting,
     personnelaccomplishmentapproved,
     personnelaccomplishmentresubmitted,
+    personnelaccomplishmentreturned,
     queryParams = null,
     totalCount,
     currentPageCount,
@@ -27,6 +29,9 @@ export default function Index({
     totalCountresubmitted,
     currentPageCountresubmitted,
     currentPageresubmitted,
+    totalCountreturned,
+    currentPageCountreturned,
+    currentPagereturned,
 }) {
     queryParams = queryParams || {};
     const debounceTimeout = useRef(null);
@@ -126,6 +131,20 @@ export default function Index({
                                     </button>
 
                                     <button
+                                        onClick={() => changeTab("returned")}
+                                        className={`pb-3 px-1 border-b-2 font-medium text-sm transition ${
+                                            activeTab === "returned"
+                                                ? "border-blue-500 text-blue-600"
+                                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                        }`}
+                                    >
+                                        Returned
+                                        <span className="inline-flex ml-2 items-center justify-center min-w-[24px] h-5 px-1.5 rounded-full bg-yellow-100 text-yellow-700 text-xs font-semibold">
+                                            {totalCountreturned ?? 0}
+                                        </span>
+                                    </button>
+
+                                    <button
                                         onClick={() => changeTab("resubmitted")}
                                         className={`pb-3 px-1 border-b-2 font-medium text-sm transition ${
                                             activeTab === "resubmitted"
@@ -166,7 +185,6 @@ export default function Index({
 
                             {activeTab === "waiting" && (
                                 <>
-                                    np
                                     <Waiting
                                         personnelaccomplishmentwaiting={
                                             personnelaccomplishmentwaiting
@@ -203,6 +221,33 @@ export default function Index({
                                         }
                                         currentPageapproved={
                                             currentPageapproved
+                                        }
+                                        toolbar={
+                                            <SearchBar
+                                                queryParams={queryParams}
+                                                searchFieldChanged={
+                                                    searchFieldChanged
+                                                }
+                                            />
+                                        }
+                                    />
+                                </>
+                            )}
+
+                            {activeTab === "returned" && (
+                                <>
+                                    <Returned
+                                        auth={auth}
+                                        personnelaccomplishmentreturned={
+                                            personnelaccomplishmentreturned
+                                        }
+                                        queryParams={queryParams}
+                                        totalCountreturned={totalCountreturned}
+                                        currentPageCountreturned={
+                                            currentPageCountreturned
+                                        }
+                                        currentPagereturned={
+                                            currentPagereturned
                                         }
                                         toolbar={
                                             <SearchBar

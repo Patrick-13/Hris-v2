@@ -27,6 +27,7 @@ class PersonnelOvertimeStoreRequest extends FormRequest
             'date_of_request' => 'required|date',
             'purpose_of_overtime' => 'required|string|max:255',
             'justification' => 'required|string|max:255',
+            'attachment_file' => 'nullable|file|max:5120',
             'employee_id' => 'required|exists:personnel_employees,employee_id',
             'request_status' => 'nullable|boolean',
             'worktoaccomplishments' => 'required|array|min:1',

@@ -21,8 +21,11 @@ class exportPdfsFileLeave extends Controller
             'employeeBy.employeeSalaryBy',
             'employeeBy.leavesBy',
             'employeeBy.leavecreditBy.leaveTypeBy',
-            'employeeBy.esignature'
+            'employeeBy.esignature',
+            'leaveUsedLog'
         ])->findOrFail($id);
+
+        // dd($leave);
 
         // dd($leave);
         $employee = $leave->employeeBy; // ✅ correct relationship
@@ -40,18 +43,19 @@ class exportPdfsFileLeave extends Controller
             }
         }
 
-        // ✅ Calculate days used in this specific leave
-        $daysUsed = Carbon::parse($leave->start_date)
-            ->diffInDays(Carbon::parse($leave->end_date)) + 1;
-
 
         $leavetype = LeaveType::find($leave->leave_type_id);
         $leavename = $leavetype->name;
 
-        $vacationLeaveCredit = $employee->leavecreditBy
-            ->firstWhere('leave_type_id', 1); // assuming 1 = Vacation Leave
-        $sickLeaveCredit = $employee->leavecreditBy
-            ->firstWhere('leave_type_id', 2); // assuming 2 = Sick Leave
+        $vacationLeaveCredit = $leave->leaveUsedLog
+            ?->where('leave_type_id', 1)
+            ->where('personnel_leave_id', $id)
+            ->first();
+
+        $sickLeaveCredit = $leave->leaveUsedLog
+            ?->where('leave_type_id', 2)
+            ->where('personnel_leave_id', $id)
+            ->first();
 
         $data = [
             'department' => 'Environmental Management Bureau XI',
@@ -64,7 +68,7 @@ class exportPdfsFileLeave extends Controller
             'leave_type' => $leavename ?? 'N/A',
             'details' => $leave->reason ?? '',
             'leavespent' => $leave->leavespent ?? '',
-            'no_of_days' => $daysUsed ?? '',
+            'no_of_days' => $leave->total_days ?? '',
             'inclusive_dates' => $leave->start_date && $leave->end_date
                 ? Carbon::parse($leave->start_date)->format('F d, Y') . ' to ' . Carbon::parse($leave->end_date)->format('F d, Y')
                 : '',

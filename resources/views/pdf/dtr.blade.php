@@ -113,18 +113,37 @@
             $breakIn = optional($dtr)->breakIn;
             $timeOut = optional($dtr)->timeOut;
 
+            $carbonDate = \Carbon\Carbon::parse($row['date']);
+            $dayOfWeek = $carbonDate->format('D');
+
+            // Friday is NO WORK
+            $isFriday = $dayOfWeek === 'Fri';
+
+            // Saturday/Sunday are WEEKEND
+            $isWeekend = $carbonDate->isWeekend();
+
+            // Friday + weekend should never display as LEAVE
+            $isNonWorkingDay = $isFriday || $isWeekend;
+
+            // Only consider leave if it is an actual working day
+            $hasLeave = $row['status'] === 'LEAVE' && !$isNonWorkingDay;
+
             // ✅ CHECKS
             $hasTime =
             !empty($timeIn) ||
             !empty($breakOut) ||
             !empty($breakIn) ||
             !empty($timeOut);
+
             $hasLeave = $row['status'] === 'LEAVE';
             $isActivity = in_array($row['status'], ['ACTIVITY', 'TRAINING', 'TRAVEL', 'NO WORK']);
 
             // ✅ FINAL PRIORITY
             if ($hasTime) {
             $finalStatus = 'PRESENT';
+            } elseif ($isNonWorkingDay) {
+            // Never show LEAVE on Friday/weekends
+            $finalStatus = $isWeekend ? 'WEEKEND' : 'NO WORK';
             } elseif ($hasLeave) {
             $finalStatus = 'LEAVE';
             } elseif ($isActivity) {
@@ -202,11 +221,11 @@
 
                     {{-- ================= ACTIVITY ================= --}}
                     @elseif($finalStatus === 'ACTIVITY')
-                    <td colspan="7">Activity: {{ $row['activity'] }} (S.O #: {{ $row['soNumber'] }})</td>
+                    <td colspan="7">Activity: (S.O #: {{ $row['soNumber'] }})</td>
 
                     {{-- ================= TRAINING ================= --}}
                     @elseif($finalStatus === 'TRAINING')
-                    <td colspan="7">Training: {{ $row['title'] }} (S.O #: {{ $row['soNumber'] }})</td>
+                    <td colspan="7">Training: (S.O #: {{ $row['soNumber'] }})</td>
 
                     {{-- ================= TRAVEL ================= --}}
                     @elseif($finalStatus === 'TRAVEL')
@@ -215,7 +234,7 @@
                     </td>
 
                     {{-- ================= WEEKEND ================= --}}
-                    @elseif($row['status'] === 'WEEKEND')
+                    @elseif($finalStatus === 'WEEKEND')
                     <td colspan="7">WEEKEND</td>
 
                     {{-- ================= HOLIDAY ================= --}}
@@ -250,7 +269,7 @@
                         }
 
                         if (!empty($row['soNumber'])) {
-                        $remarks[] = 'S.O #' . $row['soNumber'];
+                        $remarks[] = (($row['title_id'] ?? null) == 9 ? 'TT #' : 'S.O #') . $row['soNumber'];
                         }
 
                         if (!empty($row['soNumberTraining'])) {
@@ -269,9 +288,11 @@
                         $remarks[] = 'Leave';
                         }
 
-                        if($hasTime && $dayOfWeek === 'Fri'){
+                        if ($hasTime && $dayOfWeek === 'Fri') {
                         $remarks[] = 'OT';
                         }
+
+
                         @endphp
 
                         <small>

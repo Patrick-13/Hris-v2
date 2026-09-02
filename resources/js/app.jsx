@@ -40,6 +40,17 @@ createInertiaApp({
                 {/* <TkoProvider> */}
                 <div className="min-h-screen flex flex-col">
                     <Apphead />
+
+                    {/* Maintenance Announcement */}
+                    {/* Announcement */}
+                    {props.initialPage.props.announcement && (
+                        <div className="bg-yellow-500 text-black overflow-hidden whitespace-nowrap border-b border-yellow-600">
+                            <div className="animate-marquee inline-block py-2 px-4 font-semibold text-sm">
+                                📢 {props.initialPage.props.announcement.title}:{" "}
+                                {props.initialPage.props.announcement.body}
+                            </div>
+                        </div>
+                    )}
                     <main className="flex-1">
                         <NotificationProvider
                             user={props.initialPage.props.auth.user}

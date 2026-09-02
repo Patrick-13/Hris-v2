@@ -192,6 +192,7 @@ export default function Index({
                                                 >
                                                     Justification
                                                 </TableHeading>
+                                                <th>Attachment</th>
                                                 <TableHeading
                                                     name="work_to_accomplished"
                                                     sort_field={
@@ -288,6 +289,29 @@ export default function Index({
                                                                 {
                                                                     personnelovertime.justification
                                                                 }
+                                                            </td>
+                                                            <td className="px-3 py-2">
+                                                                {personnelovertime.attachment_file ? (
+                                                                    <a
+                                                                        href={`/user/myovertime/${encodeURIComponent(
+                                                                            personnelovertime.attachment_file
+                                                                        ).replace(
+                                                                            /%2F/g,
+                                                                            "/"
+                                                                        )}`}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="text-blue-500 hover:underline"
+                                                                    >
+                                                                        Attachment
+                                                                        File
+                                                                    </a>
+                                                                ) : (
+                                                                    <span className="text-gray-400">
+                                                                        No
+                                                                        Attachment
+                                                                    </span>
+                                                                )}
                                                             </td>
                                                             <td className="px-3 py-2">
                                                                 {

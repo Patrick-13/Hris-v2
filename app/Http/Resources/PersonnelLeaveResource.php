@@ -22,6 +22,7 @@ class PersonnelLeaveResource extends JsonResource
             'leaveType' => new LeaveTypeResource($this->leaveType),
             'refunds' =>  LeaveRefundResource::collection($this->refunds),
             'leavespent' => $this->leavespent,
+            'wellness_type' => $this->wellness_type,
             'reason' => $this->reason,
             'start_date' => $this->start_date,
             'end_date' => $this->end_date,

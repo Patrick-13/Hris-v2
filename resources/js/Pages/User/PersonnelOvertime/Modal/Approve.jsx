@@ -34,17 +34,12 @@ export default function Approve({ employeeovertimes, closeModal }) {
             return;
         }
 
-        put(
-            route("employeeovertime.approve", {
-                id: employeeovertimes.id,
-            }),
-            {
-                onSuccess: () => {
-                    closeModal();
-                    reset();
-                },
-            }
-        );
+        put(route("employeeovertime.approve", employeeovertimes.id), {
+            onSuccess: () => {
+                closeModal();
+                reset();
+            },
+        });
     };
 
     return (

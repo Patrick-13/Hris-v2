@@ -149,4 +149,9 @@ class MyOvertimeConroller extends Controller
 
         return PersonnelOvertimeResource::collection($employeeovertime);
     }
+
+    public function showFile($filename)
+    {
+        return $this->employeeOvertimeService->showFile($filename);
+    }
 }

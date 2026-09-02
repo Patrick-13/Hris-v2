@@ -1,5 +1,8 @@
 import Pagination from "@/Components/Pagination";
 import TableHeading from "@/Components/TableHeading";
+import { useState } from "react";
+import Modal from "@/Components/Modal";
+import ShowAccomplishment from "../Modal/ShowAccomplishment";
 
 const Approved = ({
     toolbar,
@@ -9,12 +12,30 @@ const Approved = ({
     currentPageCountapproved,
     currentPageapproved,
 }) => {
+    const [showModalAccomplishment, setShowModalAccomplishment] =
+        useState(false);
+    const [selectedAccomplishmentOvertime, setSelectedAccomplishmentOvertime] =
+        useState(null);
+
     const formatName = (emp) => {
         if (!emp) return "-";
 
         const mi = emp.middlename ? emp.middlename[0].toUpperCase() + "." : "";
 
         return `${emp.lastname}, ${emp.firstname} ${mi}`;
+    };
+
+    const handleAccomplishmentClick = async (personnelovertimeId) => {
+        try {
+            const response = await axios.get(
+                `/user/employeeovertime/${personnelovertimeId}/showaccomplishment`
+            );
+            console.log(response.data);
+            setSelectedAccomplishmentOvertime(response.data);
+            setShowModalAccomplishment(true);
+        } catch (error) {
+            console.error("Error fetching data", error);
+        }
     };
 
     const sortChanged = (employee_id) => {
@@ -158,6 +179,17 @@ const Approved = ({
                     />
                 </div>
             </div>
+            <Modal
+                show={showModalAccomplishment}
+                onClose={() => setShowModalAccomplishment(false)}
+                closeable={true}
+                maxWidth="4xl"
+            >
+                <ShowAccomplishment
+                    employeeovertimes={selectedAccomplishmentOvertime}
+                    closeModal={() => setShowModalAccomplishment(false)}
+                />
+            </Modal>
         </>
     );
 };

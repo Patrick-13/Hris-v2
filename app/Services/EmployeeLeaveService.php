@@ -6,17 +6,48 @@ use App\DTOs\LeaveApprovalData;
 use App\DTOs\PersonnelLeaveData;
 use App\Models\Division;
 use App\Models\EmployeeMovement;
+use App\Models\Holiday;
 use App\Models\LeaveApproval;
 use App\Models\LeaveCredit;
+use App\Models\LeaveUsedLog;
 use App\Models\PersonnelLeave;
 use App\Models\Position;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class EmployeeLeaveService
 {
     public function createLeave(PersonnelLeaveData $data): PersonnelLeave
     {
-        $leave = PersonnelLeave::create($data->toArray());
+
+        $path = null;
+
+        if ($data->attachment_file) {
+            $file = $data->attachment_file;
+
+            $description = "Attachments";
+
+            // Sanitize the folder name (remove spaces/special chars)
+            $folder = preg_replace('/[^A-Za-z0-9_\-]/', '_', $description);
+
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs("Emergency/{$folder}", $filename, 'network');
+        }
+
+        $leave = PersonnelLeave::create([
+            'employee_id' => $data->employee_id,
+            'leave_type_id' => $data->leave_type_id,
+            'wellness_type' => $data->wellness_type,
+            'leave_mode' => $data->leave_mode,
+            'total_days' => $data->total_days,
+            'activity_id' => $data->activity_id,
+            'leavespent' => $data->leavespent,
+            'reason' => $data->reason,
+            'start_date' => $data->start_date,
+            'end_date' => $data->end_date,
+            'request_status' => $data->request_status,
+            'attachment_file' => $path ? $path : null,
+        ]);
 
         $this->createApprovalsForLeave($leave);
 
@@ -245,20 +276,45 @@ class EmployeeLeaveService
             'request_status' => 'approved',
         ]);
 
-        $employee = $personnelLeave->employeeBy;
+        // Leave types 1, 2, and 10 = 1.25 deduction per day
+        $isSpecialLeaveType = in_array(
+            $personnelLeave->leave_type_id,
+            [1, 2, 10]
+        );
 
-        $deductionRate = 1;
+        $deductionRate = $isSpecialLeaveType ? 1.25 : 1;
 
-        if ($employee) {
-            if ($employee->flexi_type === 'FWA-A') {
+        $isHalfLeave = in_array(
+            $personnelLeave->leave_type_id,
+            [10]
+        ) && $personnelLeave->leave_mode === 'half';
+
+        if (
+            $isSpecialLeaveType &&
+            !$isHalfLeave &&
+            $personnelLeave->start_date
+        ) {
+            $startDate = Carbon::parse($personnelLeave->start_date);
+            $friday = $startDate->copy()
+                ->startOfWeek(Carbon::MONDAY)
+                ->addDays(4);
+
+            // Check holidays between the leave start and that Friday
+            $hasFridayHoliday = Holiday::whereBetween(
+                'holiday_date',
+                [
+                    $startDate->toDateString(),
+                    $friday->toDateString(),
+                ]
+            )
+                ->whereRaw('DAYOFWEEK(holiday_date) = 6')
+                ->exists();
+
+
+            if ($hasFridayHoliday) {
                 $deductionRate = 1;
-            } elseif ($employee->flexi_type === 'FWA-B') {
-                $deductionRate = 1.25;
             }
         }
-
-        $isHalfLeave = in_array($personnelLeave->leave_type_id, [9, 10])
-            && $personnelLeave->leave_mode === 'half';
 
         if ($isHalfLeave) {
             $deductedDays = 0.5 * $deductionRate;
@@ -273,12 +329,29 @@ class EmployeeLeaveService
             ->first();
 
         if ($leaveCredit) {
+
+            // Get balance BEFORE this leave deduction
+            $currentBalance = $leaveCredit->balance;
+
+            // Deduct this leave from the total used
             $leaveCredit->increment('used', $deductedDays);
 
-            $leaveCredit->refresh();
+            // Calculate the new balance
+            $newBalance = $currentBalance - $deductedDays;
 
+            // Update current balance
             $leaveCredit->update([
-                'balance' => $leaveCredit->entitled - $leaveCredit->used,
+                'balance' => $newBalance,
+            ]);
+
+            // Log this specific leave usage
+            LeaveUsedLog::create([
+                'employee_id'   => $leaveCredit->employee_id,
+                'leave_type_id' => $leaveCredit->leave_type_id,
+                'personnel_leave_id' => $personnelLeave->id,
+                'entitled'      => $currentBalance,
+                'used'          => $deductedDays,
+                'balance'       => $newBalance,
             ]);
         }
     }

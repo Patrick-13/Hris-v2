@@ -16,6 +16,12 @@ class LeaveApproval extends Model
         'approved_at',
     ];
 
+    protected $casts = [
+        'pending_at' => 'datetime',
+        'approved_at' => 'datetime',
+    ];
+
+
     // Approval belongs to a leave
     public function leave()
     {

@@ -9,7 +9,7 @@ import dayjs from "dayjs";
 
 export default function Create({
     leavetypes,
-    // activitytypes,
+    ctoLeave,
     user,
     closeModal,
     employmentStatus,
@@ -20,8 +20,9 @@ export default function Create({
     const { data, setData, post, processing, errors, reset } = useForm({
         employee_id: currentUser?.employee_id ?? "",
         leave_type_id: "",
-        // activity_id: "",
         leavespent: "",
+        wellness_type: "",
+        attachment_file: null,
         reason: "",
         start_date: "",
         end_date: "",
@@ -31,6 +32,7 @@ export default function Create({
     });
 
     const isCTO = [10].includes(parseInt(data.leave_type_id));
+    const isWLP = [9].includes(parseInt(data.leave_type_id));
 
     const getWorkingDays = (startDate, endDate) => {
         if (!startDate || !endDate) return 0;
@@ -100,7 +102,9 @@ export default function Create({
 
     const onSubmit = (e) => {
         e.preventDefault();
+        if (processing) return;
         post(route("myleave.store"), {
+            forceFormData: true,
             onSuccess: () => {
                 closeModal();
                 reset();
@@ -163,6 +167,87 @@ export default function Create({
                                 </option>
                             ))}
                         </SelectInput>
+
+                        {isWLP && (
+                            <div className="mt-3 space-y-2">
+                                <InputLabel>Wellness Type</InputLabel>
+
+                                <SelectInput
+                                    name="wellness_type"
+                                    id="wellness_type"
+                                    value={data.wellness_type || ""}
+                                    onChange={(e) =>
+                                        setData("wellness_type", e.target.value)
+                                    }
+                                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                >
+                                    <option value="">Select Type</option>
+                                    <option value="normal">Normal</option>
+                                    <option value="emergency">Emergency</option>
+                                </SelectInput>
+
+                                <InputError
+                                    message={errors.wellness_type}
+                                    className="mt-2"
+                                />
+                            </div>
+                        )}
+                        {isCTO && (
+                            <div className="mt-3 space-y-2">
+                                <InputLabel>Select CTO</InputLabel>
+
+                                <SelectInput
+                                    name="leave_type_id"
+                                    id="leave_type_id"
+                                    value={data.leave_type_id || ""}
+                                    onChange={(e) =>
+                                        setData("leave_type_id", e.target.value)
+                                    }
+                                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                >
+                                    {ctoLeave?.map((ctoLeave_) => (
+                                        <option
+                                            key={ctoLeave_.id}
+                                            value={ctoLeave_.id}
+                                        >
+                                            {ctoLeave_.entitled}
+                                        </option>
+                                    ))}
+                                </SelectInput>
+
+                                <InputError
+                                    message={errors.leave_type_id}
+                                    className="mt-2"
+                                />
+                            </div>
+                        )}
+                        {data.wellness_type === "emergency" &&
+                            data.total_days >= 3 && (
+                                <div className="mt-3 space-y-2">
+                                    <InputLabel>
+                                        Attach File{" "}
+                                        <span className="text-red-500">*</span>
+                                    </InputLabel>
+
+                                    <TextInput
+                                        name="attachment_file"
+                                        id="attachment_file"
+                                        type="file"
+                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx"
+                                        onChange={(e) =>
+                                            setData(
+                                                "attachment_file",
+                                                e.target.files[0]
+                                            )
+                                        }
+                                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                    />
+                                    <InputError
+                                        message={errors.attachment_file}
+                                        className="mt-2"
+                                    />
+                                </div>
+                            )}
                         <InputError
                             message={errors.leave_type_id}
                             className="mt-2"
@@ -202,6 +287,9 @@ export default function Create({
 
                     <div>
                         <InputLabel className="block text-sm font-medium text-gray-700">
+                            {data.wellness_type === "emergency" && (
+                                <span className="text-red-500">*</span>
+                            )}
                             Reason
                         </InputLabel>
                         <TextInput

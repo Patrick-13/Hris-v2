@@ -25,7 +25,7 @@ class OvertimeAccomplishmentStoreRequest extends FormRequest
             'accomplishments' => 'required|array|min:1',
             'accomplishments.*.work_accomplished' => 'required|string',
             'accomplishments.*.duration_hours' => 'required|numeric|min:0.25',
-            'accomplishments.*.attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx,xlsx|max:5120',
+            'accomplishments.*.attachment' => 'nullable|file|mimes:pdf|max:20480',
         ];
     }
 }

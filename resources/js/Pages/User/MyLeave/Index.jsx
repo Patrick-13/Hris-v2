@@ -11,6 +11,7 @@ import { SearchBar } from "@/Components/SearchBar";
 export default function Index({
     auth,
     employmentStatus,
+    ctoLeave,
     personneleaves,
     leavetypes,
     activitytypes,
@@ -557,6 +558,7 @@ export default function Index({
                 >
                     <Create
                         user={auth}
+                        ctoLeave={ctoLeave}
                         employmentStatus={employmentStatus}
                         leavetypes={leavetypes}
                         activitytypes={activitytypes}

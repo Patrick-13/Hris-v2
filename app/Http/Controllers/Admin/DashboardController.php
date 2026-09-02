@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\PersonnelLeaveResource;
 use App\Models\Dtr;
 use App\Models\IclockTransaction;
 use App\Models\PersonnelEmployee;
@@ -22,11 +23,13 @@ class DashboardController extends Controller
         //leave count
         $employeesOnLeave = PersonnelLeave::whereDate('start_date', '<=', $today)
             ->whereDate('end_date', '>=', $today)
-            ->whereHas('approvals', function ($q) {
-                $q->whereIn(DB::raw('LOWER(level)'), ['regional', 'hr'])
-                    ->whereRaw('LOWER(status) = ?', ['approved']);
-            })
+            ->where('request_status', 'approved')
             ->pluck('employee_id');
+
+        $employeesOnLeaveToday = PersonnelLeave::with(['employeeBy', 'leaveType'])->whereDate('start_date', '<=', $today)
+            ->whereDate('end_date', '>=', $today)
+            ->where('request_status', 'approved')
+            ->get();
 
         //dtr today
         $dtrToday = Dtr::whereDate('punch_date', $today)->get();
@@ -106,6 +109,7 @@ class DashboardController extends Controller
 
         return inertia('Admin/Dashboard/Admin', [
             'employeecount' => $employeecount,
+            'employeesOnLeaveToday' => $employeesOnLeaveToday,
             'leavecount'    => $leavecount,
             'present'       => $presentCount,
             'late'          => $lateCount,

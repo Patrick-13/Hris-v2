@@ -24,7 +24,7 @@ const Pending = ({
             queryParams.sort_field = employee_id;
             queryParams.sort_direction = "asc";
         }
-        router.get(route("employeeleave.index"), queryParams);
+        router.get(route("employeeleaveadmin.index"), queryParams);
     };
 
     return (

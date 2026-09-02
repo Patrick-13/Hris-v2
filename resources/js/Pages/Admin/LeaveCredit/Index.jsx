@@ -285,7 +285,7 @@ export default function Index({
                                                             <td className="px-3 py-2">
                                                                 {leavecredit.used
                                                                     ? [
-                                                                          9, 10,
+                                                                          10,
                                                                       ].includes(
                                                                           leavecredit
                                                                               .leaveTypeBy
@@ -298,7 +298,7 @@ export default function Index({
                                                             <td className="px-3 py-2">
                                                                 {leavecredit.balance
                                                                     ? [
-                                                                          9, 10,
+                                                                          10,
                                                                       ].includes(
                                                                           leavecredit
                                                                               .leaveTypeBy

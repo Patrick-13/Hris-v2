@@ -10,6 +10,12 @@ export default function Show({ activities }) {
         links,
     } = activities;
 
+    const totalDays =
+        Math.ceil(
+            (new Date(activity.dateTo) - new Date(activity.dateFrom)) /
+                (1000 * 60 * 60 * 24)
+        ) + 1;
+
     return (
         <div className="py-6">
             {/* header */}
@@ -21,7 +27,8 @@ export default function Show({ activities }) {
                         </h1>
                         <p className="text-sm opacity-90">
                             {new Date(activity.dateFrom).toLocaleDateString()} -{" "}
-                            {new Date(activity.dateTo).toLocaleDateString()}
+                            {new Date(activity.dateTo).toLocaleDateString()}{" "}
+                            ({totalDays} {totalDays === 1 ? "day" : "days"})
                         </p>
                     </div>
 

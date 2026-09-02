@@ -274,6 +274,12 @@ const Sidebar = ({ user, totalPending }) => {
             active: route().current("activitytype.index"),
         },
         {
+            submoduleId: 42,
+            name: "Announcement",
+            href: route("announcement.index"),
+            active: route().current("announcement.index"),
+        },
+        {
             submoduleId: 10,
             name: "Company",
             href: route("company.index"),

@@ -6,6 +6,7 @@ import { useOvertimeNotifications } from "@/Contexts/OvertimeApprovalContext";
 
 export default function Approve({ employeeovertimes, closeModal }) {
     console.log(employeeovertimes);
+
     const {
         data,
         setData,
@@ -16,7 +17,8 @@ export default function Approve({ employeeovertimes, closeModal }) {
         setError,
         clearErrors,
     } = useForm({
-        status: employeeovertimes.status || "",
+        status: "",
+        remarks: "",
     });
 
     const { fetchPending } = useOvertimeNotifications();
@@ -31,24 +33,21 @@ export default function Approve({ employeeovertimes, closeModal }) {
             return;
         }
 
-        if (data.status === "rejected" && !data.remarks.trim()) {
-            setError("remarks", "Remarks are required when rejecting a tko.");
+        if (data.status === "returned" && !data.remarks.trim()) {
+            setError(
+                "remarks",
+                "Remarks are required when returning an Accomplishment."
+            );
             return;
         }
 
-        put(
-            route("employeeovertimeapprove.approve", {
-                id: employeeovertimes.id,
-            }),
-            data,
-            {
-                onSuccess: () => {
-                    fetchPending();
-                    closeModal();
-                    reset();
-                },
+        put(route("aro.approve", employeeovertimes.id), {
+            onSuccess: () => {
+                fetchPending();
+                closeModal();
+                reset();
             },
-        );
+        });
     };
 
     return (
@@ -57,35 +56,60 @@ export default function Approve({ employeeovertimes, closeModal }) {
             className="bg-white p-6 rounded-lg shadow-md w-full max-w-5xl"
         >
             <h2 className="text-2xl font-semibold mb-6 text-gray-700">
-                Are you sure to approved the overtime?
+                Are you sure you want to approve this overtime?
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-                {/* 1st column */}
+            <div className="grid grid-cols-1 gap-6">
                 <div className="space-y-4">
                     <div>
                         <InputLabel className="block text-sm font-medium text-gray-700">
-                            <span className="text-red-500">*</span>Status
+                            <span className="text-red-500">*</span> Status
                         </InputLabel>
+
                         <SelectInput
                             name="status"
                             id="status"
-                            type="text"
-                            value={data.status || ""}
+                            value={data.status}
                             onChange={(e) => setData("status", e.target.value)}
                             className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
                         >
-                            <option value="">Select Leave Type</option>
-                            <option value="approved">approved</option>
-                            <option value="rejected">rejected</option>
+                            <option value="">Select Status</option>
+                            <option value="approved">Approved</option>
+                            <option value="returned">Returned</option>
                         </SelectInput>
+
                         <InputError message={errors.status} className="mt-2" />
+
+                        {data.status === "returned" && (
+                            <div className="mt-4">
+                                <InputLabel className="block text-sm font-medium text-gray-700">
+                                    <span className="text-red-500">*</span>{" "}
+                                    Remarks
+                                </InputLabel>
+
+                                <textarea
+                                    name="remarks"
+                                    id="remarks"
+                                    value={data.remarks}
+                                    onChange={(e) =>
+                                        setData("remarks", e.target.value)
+                                    }
+                                    rows={4}
+                                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                    placeholder="Enter remarks..."
+                                />
+
+                                <InputError
+                                    message={errors.remarks}
+                                    className="mt-2"
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
 
             <div className="mt-6 flex justify-end space-x-4">
-                {/* Cancel Button */}
                 <button
                     type="button"
                     onClick={closeModal}
@@ -95,7 +119,6 @@ export default function Approve({ employeeovertimes, closeModal }) {
                     Close
                 </button>
 
-                {/* Submit Button */}
                 <button
                     type="submit"
                     disabled={processing || !data.status}

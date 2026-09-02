@@ -3,6 +3,7 @@
 use App\Exports\LeaveCardExport;
 use App\Http\Controllers\Admin\ActivityTypeController;
 use App\Http\Controllers\Admin\AdminDownloadableForm;
+use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\AroController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CocCreditController;
@@ -56,6 +57,13 @@ Route::prefix('admin')->middleware(['auth', 'admin', 'verified', 'throttle:60,1'
     Route::post('/activitytype', [ActivityTypeController::class, 'store'])->name('activitytype.store');
     Route::get('/activitytype/{leavetypeId}/edit', [ActivityTypeController::class, 'edit']);
     Route::put('/activitytype/{id}', [ActivityTypeController::class, 'update'])->name('activitytype.update');
+
+    //announcement
+     //activity route
+    route::get('/announcement', [AnnouncementController::class, 'index'])->name('announcement.index');
+    Route::post('/announcement', [AnnouncementController::class, 'store'])->name('announcement.store');
+    Route::get('/announcement/{announcementId}/edit', [AnnouncementController::class, 'edit'])->name('announcement.edit');
+    Route::put('/announcement/{id}', [AnnouncementController::class, 'update'])->name('announcement.update');
 
     //activity route
     route::get('/activity', [ActivityController::class, 'index'])->name('activity.index');

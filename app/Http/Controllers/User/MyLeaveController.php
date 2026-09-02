@@ -8,6 +8,7 @@ use App\Http\Requests\PersonnelLeaveStoreRequest;
 use App\Http\Requests\PersonnelLeaveUpdateRequest;
 use App\Http\Resources\PersonnelLeaveResource;
 use App\Models\Activity;
+use App\Models\Coc_credit;
 use App\Models\LeaveType;
 use App\Models\PersonnelEmployee;
 use App\Models\PersonnelLeave;
@@ -72,10 +73,15 @@ class MyLeaveController extends Controller
             })
             ->get();
         $employee = PersonnelEmployee::where('employee_id', $employeeId)->first();
+        $ctoLeave = Coc_credit::where('employee_id', $employeeId)
+            ->whereDate('expiration_date', '>=', now())
+            ->get();
+
 
         return inertia("User/MyLeave/Index", [
             "personneleaves" => PersonnelLeaveResource::collection($personneleave),
             'leavetypes' => $leavetypes,
+            'ctoLeave' => $ctoLeave,
             'activitytypes' => $activitytypes,
             'employmentStatus' => $employee->employment_status,
             'queryParams' => request()->query() ?: null,

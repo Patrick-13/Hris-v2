@@ -109,6 +109,8 @@
                 </div>
             </div>
 
+            {{-- {{ dd($esignature) }} --}}
+
             <!-- Main header text beside logo -->
             <div style="text-align: center; margin-top: 2px; line-height: 1.1;">
                 <strong style="font-size: 15px;">Republic of the Philippines</strong><br>
@@ -163,7 +165,13 @@
                 {!! $leave_type === 'Special Emergency (Calamity) Leave' ? '☑' : '☐' !!} Special Emergency (Calamity)
                 Leave (CSC MC No. 02, 2018)<br>
                 {!! $leave_type === 'Adoption Leave' ? '☑' : '☐' !!} Adoption Leave (R.A. No. 8552)<br>
-                {!! $leave_type === 'Compensatory Time Off (COC)' ? '☑' : '☐' !!} Others<br>
+                @if ($leave_type === 'Compensatory Time Off (COC)')
+                    ☑ Others<br>
+                    <span style="margin-left: 20px;">Compensatory Time Off</span>
+                @else
+                    ☐ Others
+                @endif
+
             </td>
             <td colspan="2" style="width: 50%;">
                 <b>B. DETAILS OF LEAVE:</b><br>
@@ -212,9 +220,7 @@
                 <br><br>
                 <div colspan="2" class="signature-cell-applicant">
                     <div class="sign-block">
-                        <img src="{{ $esignature }}"
-                            class="signature-img"
-                            alt="Applicant Signature">
+                        {{-- <img src="{{ $esignature }}" class="signature-img" alt="Applicant Signature"> --}}
 
                         <div class="sign-name">
                             <strong>
@@ -247,25 +253,35 @@
                     </tr>
                     <tr>
                         <td>Total Earned</td>
-                        <td> {{ $vacation_leave }}</td>
-                        <td>{{ $sick_leave }}</td>
+                        <td>
+                            {{ $leave_type === 'Vacation Leave' ? $vacation_leave : 0 }}
+                        </td>
+                        <td>
+                            {{ $leave_type === 'Sick Leave' ? $sick_leave : 0 }}
+                        </td>
                     </tr>
                     <tr>
                         <td>Less this application</td>
-                        <td> {{ $used_vacation }}</td>
-                        <td>{{ $used_sick }}</td>
+                        <td>
+                            {{ $leave_type === 'Vacation Leave' ? $used_vacation : 0 }}
+                        </td>
+                        <td>
+                            {{ $leave_type === 'Sick Leave' ? $used_sick : 0 }}
+                        </td>
                     </tr>
                     <tr>
                         <td>Balance</td>
-                        <td> {{ $balance_vacation }}</td>
-                        <td>{{ $balance_sick }}</td>
+                        <td>
+                            {{ $leave_type === 'Vacation Leave' ? $balance_vacation : 0 }}
+                        </td>
+                        <td>
+                            {{ $leave_type === 'Sick Leave' ? $balance_sick : 0 }}
+                        </td>
                     </tr>
                 </table>
                 <div colspan="2" class="signature-cell">
                     <div class="sign-block">
-                        <img src="{{ public_path('signatures/geli.png') }}"
-                            class="signature-img"
-                            alt="Geli Signature">
+                        <img src="{{ public_path('signatures/geli.png') }}" class="signature-img" alt="Geli Signature">
 
                         <div class="sign-name">
                             <strong>
@@ -288,8 +304,7 @@
                 ___________________________<br><br><br><br>
                 <div colspan="2" class="signature-cell">
                     <div class="sign-block">
-                        <img src="{{ public_path('signatures/llanos.png') }}"
-                            class="signature-img"
+                        <img src="{{ public_path('signatures/llanos.png') }}" class="signature-img"
                             alt="Llanos Signature">
 
                         <div class="sign-name">
@@ -311,7 +326,11 @@
         <tr>
             <td>
                 <b>C. APPROVED FOR:</b><br>
-                _______ days with pay<br>
+                <span
+                    style="display: inline-block; min-width: 35px; border-bottom: 0.5px solid #000; text-align: center;">
+                    {{ $no_of_days }}
+                </span> days with pay<br>
+
                 _______ days without pay<br>
                 _______ others (Specify)
             </td>
@@ -325,8 +344,7 @@
         <tr>
             <td colspan="2" class="signature-cell">
                 <div class="sign-block">
-                    <img src="{{ public_path('signatures/alvarez.png') }}"
-                        class="signature-img"
+                    <img src="{{ public_path('signatures/alvarez.png') }}" class="signature-img"
                         alt="Alvarez Signature">
 
                     <div class="sign-name">

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Announcement;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -42,6 +43,9 @@ class HandleInertiaRequests extends Middleware
                     'error' => $request->session()->get('error'),
                 ],
             ],
+            'announcement' => fn() => Announcement::query()
+                ->whereDate('date_of_announcement', now())
+                ->first(),
         ];
     }
 }

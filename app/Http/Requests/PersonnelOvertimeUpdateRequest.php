@@ -25,6 +25,7 @@ class PersonnelOvertimeUpdateRequest extends FormRequest
             'date_of_request' => 'required|date',
             'purpose_of_overtime' => 'required|string',
             'justification' => 'required|string',
+            'attachment_file' => 'nullable|file|max:5120',
             'employee_id' => 'required|exists:personnel_employees,employee_id',
             'work_to_accomplished' => 'required|string',
             'duration_hours' => 'required|numeric|min:0.25',

@@ -186,6 +186,12 @@ export default function Attached({ employeeovertimes, closeModal }) {
                                 }
                                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
                             />
+
+                            <p className="mt-1 text-xs text-gray-500">
+                                Note: PDF files only. Maximum file size is 20
+                                MB.
+                            </p>
+
                             <InputError
                                 message={
                                     errors?.[

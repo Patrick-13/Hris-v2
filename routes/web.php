@@ -71,6 +71,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     //employee accomplishment
     route::get('/employeeovertimeccomplishment', [OvertimeAccomplishmentController::class, 'index'])->name('employeeovertimeccomplishment.index');
+    Route::get('/aro/{id}', [OvertimeAccomplishmentController::class, 'show']);
+    Route::put('/aro/{id}/approve', [OvertimeAccomplishmentController::class, 'approve'])->name('aro.approve');
     Route::post('/aro/bulk-approve', [OvertimeAccomplishmentController::class, 'bulkApprove'])->name('aro.bulk-approve');
     Route::post('/aro/bulk-returned', [OvertimeAccomplishmentController::class, 'bulkReturned'])->name('aro.bulk-returned');
     Route::get('/employeeovertimeccomplishment/{filename}', [OvertimeAccomplishmentController::class, 'showFile'])

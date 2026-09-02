@@ -8,16 +8,34 @@ export default function ShowAccomplishment({
     personnelovertimeedits,
     closeModal,
 }) {
+    console.log(employeeovertimes);
     const overtime = employeeovertimes.data[0];
-    const status =
-        employeeovertimes?.data?.[0]?.accomplishments[0]?.approvals?.[0]
-            ?.status;
-    const level =
-        employeeovertimes?.data?.[0]?.accomplishments[0]?.approvals?.[0]?.level;
+    const approvals =
+        employeeovertimes?.data?.[0]?.accomplishments?.[0]?.approvals ?? [];
+
+    // Returned always has priority
+    const returnedApproval = approvals.find(
+        (approval) => approval.status === "returned"
+    );
+
+    let currentApproval;
+
+    if (returnedApproval) {
+        currentApproval = returnedApproval;
+    } else {
+        // Find the first approval that is pending/waiting
+        currentApproval = approvals.find(
+            (approval) =>
+                approval.status === "pending"
+        );
+    }
+
+    const status = currentApproval?.status;
+    const level = currentApproval?.level;
 
     const [showModalEdit, setShowModalEdit] = useState(false);
     const [selectedPersonnelOvertime, setSelectedPersonnelOvertime] = useState(
-        personnelovertimeedits || null,
+        personnelovertimeedits || null
     );
 
     const handleEditClick = async (overtimeaccomplishmentId) => {
@@ -26,7 +44,7 @@ export default function ShowAccomplishment({
 
         try {
             const response = await axios.get(
-                `/user/employeeovertimeccomplishment/${overtimeaccomplishmentId}/edit`,
+                `/user/employeeovertimeccomplishment/${overtimeaccomplishmentId}/edit`
             );
 
             console.log(response.data);
@@ -50,8 +68,8 @@ export default function ShowAccomplishment({
                             status === "approved"
                                 ? "text-green-600"
                                 : status === "returned"
-                                  ? "text-orange-500"
-                                  : "text-gray-600"
+                                ? "text-orange-500"
+                                : "text-gray-600"
                         }`}
                     >
                         Employee Accomplishment Report ({level} | {status})
@@ -69,7 +87,7 @@ export default function ShowAccomplishment({
                         <div>
                             <strong>Date of Overtime:</strong>{" "}
                             {new Date(
-                                overtime.date_of_overtime,
+                                overtime.date_of_overtime
                             ).toLocaleDateString()}
                         </div>
                     </div>
@@ -130,10 +148,10 @@ export default function ShowAccomplishment({
                                                         {item.attachment ? (
                                                             <a
                                                                 href={`/employeeovertimeccomplishment/${encodeURIComponent(
-                                                                    item.attachment,
+                                                                    item.attachment
                                                                 ).replace(
                                                                     /%2F/g,
-                                                                    "/",
+                                                                    "/"
                                                                 )}`}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
@@ -148,7 +166,7 @@ export default function ShowAccomplishment({
                                                         )}
                                                     </td>
                                                 </tr>
-                                            ),
+                                            )
                                         )}
                                     </tbody>
                                 </table>

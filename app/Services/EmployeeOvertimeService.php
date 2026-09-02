@@ -15,18 +15,31 @@ use App\Models\Personnelovertime;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class EmployeeOvertimeService
 {
     public function createOvertime(PersonnelOvertimeData $data): Personnelovertime
     {
         $lastOvertime = null;
+        $path = null;
+
+        if ($data->attachment_file) {
+            $file = $data->attachment_file;
+
+            $folder = preg_replace('/[^A-Za-z0-9_\-]/', '_', "raro_attachments");
+            $filename = time() . '_' . $file->getClientOriginalName();
+
+            $path = $file->storeAs("raro/{$folder}", $filename, 'network');
+        }
+
 
         foreach ($data->worktoaccomplishments as $work) {
             $lastOvertime = Personnelovertime::create([
                 'date_of_request'      => $data->date_of_request,
                 'purpose_of_overtime'  => $data->purpose_of_overtime,
                 'justification'        => $data->justification,
+                'attachment_file'      => $path ? $path : null,
                 'employee_id'          => $data->employee_id,
                 'work_to_accomplished' => $work['work_to_accomplished'],
                 'duration_hours'       => $work['duration_hours'],
@@ -51,7 +64,7 @@ class EmployeeOvertimeService
     {
         $overtime = Personnelovertime::findOrFail($id);
 
-        $overtime->update([
+        $updateData  = [
             'date_of_request'      => $data->date_of_request,
             'purpose_of_overtime'  => $data->purpose_of_overtime,
             'justification'        => $data->justification,
@@ -60,7 +73,31 @@ class EmployeeOvertimeService
             'duration_hours'       => $data->duration_hours,
             'date_of_overtime'     => $data->date_of_overtime,
             'request_status'       => $data->request_status,
-        ]);
+        ];
+
+        // Only update attachment if a NEW file was uploaded
+        if ($data->attachment_file) {
+            $file = $data->attachment_file;
+
+            $folder = preg_replace(
+                '/[^A-Za-z0-9_\-]/',
+                '_',
+                'raro_attachments'
+            );
+
+            $filename = time() . '_' . $file->getClientOriginalName();
+
+            $path = $file->storeAs(
+                "raro/{$folder}",
+                $filename,
+                'network'
+            );
+
+            $updateData['attachment_file'] = $path;
+        }
+
+        $overtime->update($updateData);
+
 
         $approvals = OvertimeApproval::where(
             'overtime_id',
@@ -396,5 +433,21 @@ class EmployeeOvertimeService
         }
 
         return $approval;
+    }
+
+    public function showFile(string $filename)
+    {
+        $filename = urldecode($filename);
+
+        if (!Storage::disk('network')->exists($filename)) {
+            abort(404, 'File not found');
+        }
+
+        $mimeType = Storage::disk('network')->mimeType($filename);
+
+        return response(
+            Storage::disk('network')->get($filename),
+            200
+        )->header('Content-Type', $mimeType);
     }
 }

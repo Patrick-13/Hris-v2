@@ -10,6 +10,7 @@ class PersonnelLeave extends Model
         'id',
         'employee_id',
         'leave_type_id',
+        'wellness_type',
         'activity_id',
         'reason',
         'leavespent',
@@ -18,6 +19,7 @@ class PersonnelLeave extends Model
         'leave_mode',
         'total_days',
         'request_status',
+        'attachment_file',
         'created_at'
     ];
 
@@ -25,7 +27,7 @@ class PersonnelLeave extends Model
         'start_date' => 'date:Y-m-d',
         'end_date' => 'date:Y-m-d',
     ];
-    
+
     public function employeeBy()
     {
         return $this->belongsTo(PersonnelEmployee::class, 'employee_id', 'employee_id');
@@ -56,5 +58,10 @@ class PersonnelLeave extends Model
     public function refunds()
     {
         return $this->hasMany(LeaveRefund::class, 'leave_id');
+    }
+
+    public function leaveUsedLog()
+    {
+        return $this->hasOne(LeaveUsedLog::class);
     }
 }

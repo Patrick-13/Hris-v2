@@ -30,7 +30,6 @@ class PersonnelLeaveUpdateRequest extends FormRequest
             'leave_type_id' => ['required', 'exists:leave_types,id'],
             'leave_mode' => 'nullable|in:whole,half',
             'total_days' => 'nullable|numeric',
-            // 'activity_id' => ['nullable', 'exists:activities,id'],
             'reason' => 'nullable|string',
             'leavespent' => 'required|string',
             'start_date' => 'required|date',

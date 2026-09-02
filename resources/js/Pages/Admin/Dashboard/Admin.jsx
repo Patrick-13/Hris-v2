@@ -9,6 +9,7 @@ import BirthdayCard from "./Graphs/BirthdayCard";
 import months from "@/Utils/months";
 import TileCard from "./Graphs/TileCard";
 import DtrCard from "./Graphs/DtrCard";
+import LeaveTodayTable from "./Graphs/LeaveTodayTable";
 
 // Predefined Theme Options
 const themeOptions = {
@@ -20,6 +21,7 @@ const themeOptions = {
 
 export default function Admin({
     employeecount,
+    employeesOnLeaveToday,
     leavecount,
     present,
     late,
@@ -104,13 +106,21 @@ export default function Admin({
                             data={attendanceTrend}
                         />
                         <GenderChart data={genderData} />
-                        <div className="flex flex-col space-y-4">
-                            <BirthdayCard
-                                birthdays={birthday}
-                                monthName={monthName}
+
+                        <BirthdayCard
+                            birthdays={birthday}
+                            monthName={monthName}
+                        />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6 mt-2">
+                        <div className="lg:col-span-2">
+                            {" "}
+                            <LeaveTodayTable
+                                employeeOnLeave={employeesOnLeaveToday}
                             />
-                            <DtrCard dtr={dtr} />
                         </div>
+
+                        <DtrCard dtr={dtr} />
                     </div>
                 </div>
             </div>

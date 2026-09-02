@@ -149,12 +149,14 @@ Route::prefix('user')->middleware(['auth', 'inactiveaccount', 'verified'])->grou
 
     //employee overtime route
     route::get('/myovertime', [MyOvertimeConroller::class, 'index'])->name('myovertime.index');
+    Route::get('/myovertime/{filename}', [MyOvertimeConroller::class, 'showFile'])
+        ->where('filename', '.*');
     Route::get('/employeeovertime/{id}/attachment', [MyOvertimeConroller::class, 'attachment'])->name('employeeovertime.attachment');
     Route::get('/employeeovertime/{id}/showaccomplishment', [MyOvertimeConroller::class, 'showaccomplishment'])->name('employeeovertime.showaccomplishment');
     Route::post('/employeeovertime/{id}/accomplishment', [MyOvertimeConroller::class, 'accomplishment'])->name('employeeovertime.accomplishment');
     Route::post('/employeeovertime', [MyOvertimeConroller::class, 'store'])->name('employeeovertime.store');
     Route::get('/employeeovertime/{employeeleaveId}/edit', [MyOvertimeConroller::class, 'edit']);
-    Route::put('/employeeovertime/{id}', [MyOvertimeConroller::class, 'update'])->name('employeeovertime.update');
+    Route::post('/employeeovertime/{id}', [MyOvertimeConroller::class, 'update'])->name('employeeovertime.update');
     //employee overtime accomplisment route
     Route::get('/employeeovertimeccomplishment/{employeeId}/edit', [OvertimeAccomplishmentController::class, 'edit']);
     Route::post('/employeeovertimeccomplishment/{id}', [OvertimeAccomplishmentController::class, 'update'])->name('employeeovertimeccomplishment.update');

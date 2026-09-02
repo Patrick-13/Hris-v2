@@ -11,6 +11,7 @@ class Personnelovertime extends Model
         'date_of_request',
         'purpose_of_overtime',
         'justification',
+        'attachment_file',
         'employee_id',
         'work_to_accomplished',
         'duration_hours',

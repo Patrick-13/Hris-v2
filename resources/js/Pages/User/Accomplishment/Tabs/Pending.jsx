@@ -4,6 +4,7 @@ import { useState } from "react";
 import Modal from "@/Components/Modal";
 import ShowAccomplishment from "../Modal/ShowAccomplishment";
 import { router } from "@inertiajs/react";
+import Approve from "../Modal/Approve";
 
 const Pending = ({
     auth,
@@ -17,6 +18,7 @@ const Pending = ({
     const [selectedIds, setSelectedIds] = useState([]);
     const [showModalAccomplishment, setShowModalAccomplishment] =
         useState(false);
+    const [showModalAccomplishmentApproved, setShowModalAccomplishmentApproved] = useState(false);
     const [selectedAccomplishmentOvertime, setSelectedAccomplishmentOvertime] =
         useState(null);
 
@@ -110,6 +112,16 @@ const Pending = ({
                 )
         );
     };
+
+    const handleApproveClick = async (accomplishmentId) => {
+        try {
+            const response = await axios.get(`/aro/${accomplishmentId}`);
+            setSelectedAccomplishmentOvertime(response.data);
+            setShowModalAccomplishmentApproved(true);
+        } catch (error) {
+            console.error("Error fetching product data:", error);
+        }
+    };
     return (
         <>
             <div className="overflow-auto">
@@ -188,6 +200,7 @@ const Pending = ({
                                 >
                                     Status
                                 </TableHeading>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -282,6 +295,20 @@ const Pending = ({
                                                     )
                                                 )}
                                             </td>
+                                            <td className="px-3 py-2">
+                                                <button
+                                                    onClick={() =>
+                                                        handleApproveClick(
+                                                            personnelaccomplishment.id
+                                                        )
+                                                    }
+                                                    className="font-medium text-blue dark:text-blue-500 hover:underline mx-1"
+                                                >
+                                                    <span className="text-blue-500">
+                                                        Approve
+                                                    </span>
+                                                </button>
+                                            </td>
                                         </tr>
                                     )
                                 )
@@ -315,6 +342,18 @@ const Pending = ({
                 maxWidth="4xl"
             >
                 <ShowAccomplishment
+                    employeeovertimes={selectedAccomplishmentOvertime}
+                    closeModal={() => setShowModalAccomplishment(false)}
+                />
+            </Modal>
+
+            <Modal
+                show={showModalAccomplishmentApproved}
+                onClose={() => setShowModalAccomplishment(false)}
+                closeable={true}
+                maxWidth="4xl"
+            >
+                <Approve
                     employeeovertimes={selectedAccomplishmentOvertime}
                     closeModal={() => setShowModalAccomplishment(false)}
                 />

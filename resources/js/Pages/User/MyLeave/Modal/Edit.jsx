@@ -21,7 +21,8 @@ export default function Edit({
     const { data, setData, put, errors, reset } = useForm({
         employee_id: employeeleaves.employee_id || "",
         leave_type_id: employeeleaves.leave_type_id || "",
-        // activity_id: employeeleaves.activity_id || "",
+        wellness_type: employeeleaves.wellness_type || "",
+        attachment_file: employeeleaves.attachment_file || null,
         leavespent: employeeleaves.leavespent || "",
         reason: employeeleaves.reason || "",
         start_date: employeeleaves.start_date?.split("T")[0] ?? "",
@@ -30,7 +31,8 @@ export default function Edit({
         total_days: employeeleaves.total_days || "",
     });
 
-    const isCTO = [9, 10].includes(parseInt(data.leave_type_id));
+    const isCTO = [10].includes(parseInt(data.leave_type_id));
+    const isWLP = [9].includes(parseInt(data.leave_type_id));
 
     const getWorkingDays = (startDate, endDate) => {
         if (!startDate || !endDate) return 0;
@@ -110,6 +112,7 @@ export default function Edit({
     const onSubmit = (e) => {
         e.preventDefault();
         put(route("myleave.update", employeeleaves.id), {
+            forceFormData: true,
             onSuccess: () => {
                 closeModal();
                 reset();
@@ -172,52 +175,62 @@ export default function Edit({
                                 </option>
                             ))}
                         </SelectInput>
+                        {isWLP && (
+                            <div className="mt-3 space-y-2">
+                                <InputLabel>Wellness Type</InputLabel>
+
+                                <SelectInput
+                                    name="wellness_type"
+                                    id="wellness_type"
+                                    value={data.wellness_type || ""}
+                                    onChange={(e) =>
+                                        setData("wellness_type", e.target.value)
+                                    }
+                                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                >
+                                    <option value="">Select Type</option>
+                                    <option value="normal">Normal</option>
+                                    <option value="emergency">Emergency</option>
+                                </SelectInput>
+
+                                <InputError
+                                    message={errors.wellness_type}
+                                    className="mt-2"
+                                />
+                            </div>
+                        )}
+                        {data.wellness_type === "emergency" &&
+                            data.total_days >= 3 && (
+                                <div className="mt-3 space-y-2">
+                                    <InputLabel>
+                                        Attach File{" "}
+                                        <span className="text-red-500">*</span>
+                                    </InputLabel>
+
+                                    <TextInput
+                                        name="attachment_file"
+                                        id="attachment_file"
+                                        type="file"
+                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx"
+                                        onChange={(e) =>
+                                            setData(
+                                                "attachment_file",
+                                                e.target.files[0]
+                                            )
+                                        }
+                                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                    />
+                                    <InputError
+                                        message={errors.attachment_file}
+                                        className="mt-2"
+                                    />
+                                </div>
+                            )}
                         <InputError
                             message={errors.leave_type_id}
                             className="mt-2"
                         />
                     </div>
-                    {/* {leavetypes.find(
-                        (lt) =>
-                            lt.id === parseInt(data.leave_type_id) &&
-                            lt.name
-                                .toLowerCase()
-                                .includes("compensatory time-off"),
-                    ) && (
-                        <div>
-                            <InputLabel className="block text-sm font-medium text-gray-700">
-                                <span className="text-red-500">*</span>CTO
-                                Activity to Apply
-                            </InputLabel>
-                            <SelectInput
-                                name="activity_id"
-                                id="activity_id"
-                                value={data.activity_id || ""}
-                                onChange={(e) =>
-                                    setData("activity_id", e.target.value)
-                                }
-                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-                            >
-                                <option value="">Select CTO to Apply</option>
-                                {activitytypes &&
-                                    activitytypes.map((activitytype) => (
-                                        <option
-                                            key={activitytype.id}
-                                            value={activitytype.id}
-                                        >
-                                            {activitytype.activity_type_by
-                                                .name +
-                                                " - S.0 #" +
-                                                activitytype.soNumber}
-                                        </option>
-                                    ))}
-                            </SelectInput>
-                            <InputError
-                                message={errors.activity_id}
-                                className="mt-2"
-                            />
-                        </div>
-                    )} */}
 
                     <div>
                         <InputLabel className="block text-sm font-medium text-gray-700">
@@ -252,7 +265,10 @@ export default function Edit({
 
                     <div>
                         <InputLabel className="block text-sm font-medium text-gray-700">
-                            <span className="text-red-500">*</span>Reason
+                            {data.wellness_type === "emergency" && (
+                                <span className="text-red-500">*</span>
+                            )}
+                            Reason
                         </InputLabel>
                         <TextInput
                             name="reason"

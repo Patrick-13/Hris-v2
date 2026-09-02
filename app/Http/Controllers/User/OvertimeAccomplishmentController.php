@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\DTOs\OvertimeAccomplishmentData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\OvertimeAccomplishmentStoreRequest;
+use App\Http\Resources\AccomplishmentApprovalResource;
 use App\Http\Resources\OvertimeAccomplishmentResource;
 use App\Http\Resources\PersonnelOvertimeResource;
 use App\Models\Accomplishment_approval;
@@ -302,8 +303,17 @@ class OvertimeAccomplishmentController extends Controller
             'work_accomplished' => $request->work_accomplished,
             'duration_hours'    => $request->duration_hours,
             'attachment'        => $attachment,
-            'status'            => 'returned',
+            'status'            => 'pending',
         ]);
+
+        // Find the approval that returned the application
+        $returnedApproval = Accomplishment_approval::where(
+            'accomplishment_id',
+            $accomplishment->id
+        )
+            ->where('status', 'returned')
+            ->first();
+
 
         // Reset approvals
         Accomplishment_approval::where('accomplishment_id', $accomplishment->id)
@@ -313,15 +323,12 @@ class OvertimeAccomplishmentController extends Controller
                 'returned_at' => null,
             ]);
 
-        $firstApprover = Accomplishment_approval::where('accomplishment_id', $accomplishment->id)
-            ->orderBy('level')
-            ->first();
-
-        if ($firstApprover) {
-            $firstApprover->update([
-                'status' => 'resubmitted',
-                'resubmitted_at' => now(),
-            ]);
+        if ($returnedApproval) {
+            Accomplishment_approval::where('id', $returnedApproval->id)
+                ->update([
+                    'status' => 'pending',
+                    'resubmitted_at' => now(),
+                ]);
         }
 
         return redirect()->route('myovertime.index')
@@ -344,6 +351,12 @@ class OvertimeAccomplishmentController extends Controller
             'success' => 'Employee Render Accomplishment Overtime Created Successfully!'
         ]);
     }
+    public function show($id)
+    {
+        $aroid = Overtime_accomplishment::findOrFail($id);
+
+        return new OvertimeAccomplishmentResource($aroid);
+    }
 
     public function showaccomplishment($id)
     {
@@ -354,18 +367,35 @@ class OvertimeAccomplishmentController extends Controller
     }
 
 
+    public function approve(Request $request, $id)
+    {
+        $status = $request->input('status');
+        $remarks = $request->input('remarks');
+
+        // Get the updated approval from the service
+        $this->overtimeAccomplishmentService->approveAccomplishment(
+            $id,
+            $status,
+            $remarks
+        );
+
+        return back()->with([
+            'success' => 'Selected overtime requests approved at your level.',
+        ]);
+    }
 
     public function bulkApprove(Request $request)
     {
+        $remarks = $request->input('remarks');
         $validated = $request->validate([
             'ids' => 'required|array|min:1',
             'ids.*' => 'exists:overtime_accomplishments,id',
         ]);
 
-        DB::transaction(function () use ($validated) {
+        DB::transaction(function () use ($validated, $remarks) {
             foreach ($validated['ids'] as $overtimeId) {
                 // approve only at current user's level
-                $this->overtimeAccomplishmentService->approveAccomplishment($overtimeId, 'approved');
+                $this->overtimeAccomplishmentService->approveAccomplishment($overtimeId, 'approved', $remarks);
             }
         });
 
@@ -377,15 +407,16 @@ class OvertimeAccomplishmentController extends Controller
 
     public function bulkReturned(Request $request)
     {
+        $remarks = $request->input('remarks');
         $validated = $request->validate([
             'ids' => 'required|array|min:1',
             'ids.*' => 'exists:overtime_accomplishments,id',
         ]);
 
-        DB::transaction(function () use ($validated) {
+        DB::transaction(function () use ($validated, $remarks) {
             foreach ($validated['ids'] as $overtimeId) {
                 // approve only at current user's level
-                $this->overtimeAccomplishmentService->approveAccomplishment($overtimeId, 'returned');
+                $this->overtimeAccomplishmentService->approveAccomplishment($overtimeId, 'returned', $remarks);
             }
         });
 

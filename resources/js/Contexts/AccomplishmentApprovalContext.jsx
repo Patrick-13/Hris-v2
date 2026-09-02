@@ -5,6 +5,7 @@ const AccomplishmentContext = createContext(null);
 
 export const AccomplishmentProvider = ({ user, children }) => {
     const [pendingAroCount, setPendingAroCount] = useState({
+        hr: 0,
         "section/unit": 0,
         division: 0,
         rd: 0,
@@ -43,7 +44,7 @@ export const useAccomplishmentNotifications = () => {
 
     if (!context) {
         throw new Error(
-            "useAccomplishmentNotifications must be used inside AccomplishmentProvider",
+            "useAccomplishmentNotifications must be used inside AccomplishmentProvider"
         );
     }
 

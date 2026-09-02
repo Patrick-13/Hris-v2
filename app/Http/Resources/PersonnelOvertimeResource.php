@@ -20,6 +20,7 @@ class PersonnelOvertimeResource extends JsonResource
             'date_of_request' => $this->date_of_request,
             'purpose_of_overtime' => $this->purpose_of_overtime,
             'justification' => $this->justification,
+            'attachment_file' => $this->attachment_file,
             'employeeBy' => new PersonnelEmployeeResource($this->employeeBy),
             'approvals'  => OvertimeApprovalResource::collection($this->approvals),
             'accomplishments' => OvertimeAccomplishmentResource::collection($this->accomplishments),

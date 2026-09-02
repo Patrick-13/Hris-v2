@@ -10,6 +10,7 @@ export default function Create({ user, closeModal }) {
         date_of_request: new Date().toISOString().split("T")[0],
         purpose_of_overtime: "",
         justification: "",
+        attachment_file: null,
         employee_id: currentUser?.employee_id ?? "",
         request_status: "",
         worktoaccomplishments: [
@@ -147,6 +148,25 @@ export default function Create({ user, closeModal }) {
                         />
                         <InputError
                             message={errors.justification}
+                            className="mt-2"
+                        />
+                    </div>
+                    <div>
+                        <InputLabel className="block text-sm font-medium text-gray-700">
+                            <span className="text-red-500">*</span>Attach File
+                        </InputLabel>
+                        <TextInput
+                            name="attachment_file"
+                            id="attachment_file"
+                            type="file"
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx"
+                            onChange={(e) =>
+                                setData("attachment_file", e.target.files[0])
+                            }
+                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                        />
+                        <InputError
+                            message={errors.attachment_file}
                             className="mt-2"
                         />
                     </div>

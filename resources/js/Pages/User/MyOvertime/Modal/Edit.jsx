@@ -5,7 +5,7 @@ import { useForm } from "@inertiajs/react";
 
 export default function Edit({ user, employeeovertimes, closeModal }) {
     const currentUser = user?.user;
-    const { data, setData, put, errors, reset } = useForm({
+    const { data, setData, post, errors, reset } = useForm({
         date_of_request: employeeovertimes.date_of_request
             ? new Date(employeeovertimes.date_of_request)
                   .toISOString()
@@ -13,6 +13,7 @@ export default function Edit({ user, employeeovertimes, closeModal }) {
             : "",
         purpose_of_overtime: employeeovertimes.purpose_of_overtime || "",
         justification: employeeovertimes.justification || "",
+        attachment_file: null,
         employee_id: currentUser?.employee_id ?? "",
         work_to_accomplished: employeeovertimes.work_to_accomplished || "",
         duration_hours: employeeovertimes.duration_hours || "",
@@ -26,12 +27,28 @@ export default function Edit({ user, employeeovertimes, closeModal }) {
 
     const onSubmit = (e) => {
         e.preventDefault();
-        put(route("employeeovertime.update", employeeovertimes.id), {
-            onSuccess: () => {
-                closeModal();
-                reset();
+
+        post(
+            route("employeeovertime.update", employeeovertimes.id),
+            {
+                ...data,
+                _method: "PUT",
             },
-        });
+            {
+                forceFormData: true,
+                preserveScroll: true,
+
+                onSuccess: () => {
+                    console.log("SUCCESS CALLBACK FIRED");
+                    reset();
+                    closeModal();
+                },
+
+                onError: (errors) => {
+                    console.log(errors);
+                },
+            }
+        );
     };
 
     return (
@@ -125,6 +142,58 @@ export default function Edit({ user, employeeovertimes, closeModal }) {
                         />
                         <InputError
                             message={errors.justification}
+                            className="mt-2"
+                        />
+                    </div>
+                    <div>
+                        <InputLabel className="block text-sm font-medium text-gray-700">
+                            Attach File
+                        </InputLabel>
+
+                        <TextInput
+                            name="attachment_file"
+                            id="attachment_file"
+                            type="file"
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx"
+                            onChange={(e) =>
+                                setData(
+                                    "attachment_file",
+                                    e.target.files?.[0] || null
+                                )
+                            }
+                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                        />
+
+                        {employeeovertimes.attachment_file && (
+                            <p className="mt-2 text-sm text-gray-500">
+                                Existing attachment:{" "}
+                                <span className="font-medium">
+                                    {employeeovertimes.attachment_file ? (
+                                        <a
+                                            href={`/user/myovertime/${encodeURIComponent(
+                                                employeeovertimes.attachment_file
+                                            ).replace(/%2F/g, "/")}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-500 hover:underline"
+                                        >
+                                            Attachment File
+                                        </a>
+                                    ) : (
+                                        <span className="text-gray-400">
+                                            No Attachment
+                                        </span>
+                                    )}
+                                </span>
+                            </p>
+                        )}
+
+                        <p className="mt-1 text-xs text-gray-500">
+                            Leave blank to keep the existing attachment.
+                        </p>
+
+                        <InputError
+                            message={errors.attachment_file}
                             className="mt-2"
                         />
                     </div>

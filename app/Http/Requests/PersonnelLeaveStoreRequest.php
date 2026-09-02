@@ -8,6 +8,7 @@ use App\Models\PersonnelEmployee;
 use App\Models\PersonnelLeave;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class PersonnelLeaveStoreRequest extends FormRequest
 {
@@ -31,12 +32,18 @@ class PersonnelLeaveStoreRequest extends FormRequest
             'leave_type_id' => ['required', 'exists:leave_types,id'],
             'leave_mode' => 'nullable|in:whole,half',
             'total_days' => 'required|numeric',
-            // 'activity_id' => ['nullable', 'exists:activities,id'],
-            'reason' => 'nullable|string|max:255',
+            'wellness_type' => 'nullable|in:normal,emergency',
+            'reason' => [
+                'nullable',
+                'string',
+                'max:255',
+                'required_if:wellness_type,emergency',
+            ],
             'leavespent' => 'required|string',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'request_status' => 'nullable|boolean',
+            'attachment_file' => 'nullable|file|mimes:mimes:pdf,doc,docx,png,jpg,jpeg|max:20480',
         ];
     }
 
@@ -64,10 +71,13 @@ class PersonnelLeaveStoreRequest extends FormRequest
             $today      = Carbon::today();
             $year       = $today->year;
 
-            if ($data['leave_mode'] === 'half') {
-                $daysRequested  *= 0.625;
+            $deductionRate = in_array($data['leave_type_id'], [1, 2, 10]) ? 1.25 : 1;
+            $isHalfLeave = in_array($data['leave_type_id'], [10]) && $data['leave_mode'] === 'half';
+
+            if ($isHalfLeave) {
+                $daysRequested = 0.5 * $deductionRate;
             } else {
-                $daysRequested  *= 1.250;
+                $daysRequested *= $deductionRate;
             }
 
             // ********************************* //
@@ -103,7 +113,15 @@ class PersonnelLeaveStoreRequest extends FormRequest
                         });
                 })
                 ->whereHas('approvals', function ($q) {
-                    $q->whereIn('status', ['pending', 'waiting', 'approved', 'auto-approved']);
+                    $q->whereIn('status', [
+                        'pending',
+                        'waiting',
+                        'approved',
+                        'auto-approved',
+                    ]);
+                })
+                ->whereDoesntHave('approvals', function ($q) {
+                    $q->where('status', 'rejected');
                 })
                 ->first();
 
@@ -199,6 +217,34 @@ class PersonnelLeaveStoreRequest extends FormRequest
             // ********************************* //
             if ($data['leave_type_id'] == 9) {
 
+                if ($data['wellness_type'] === 'normal') {
+
+                    // Normal Wellness Leave must be applied
+                    // at least 5 days before the start date.
+                    if ($today->diffInDays($startDate) < 5) {
+                        $validator->errors()->add(
+                            'start_date',
+                            'Normal Wellness Leave must be applied at least 5 days before the start date.'
+                        );
+                    }
+                }
+
+                if ($data['wellness_type'] === 'emergency') {
+
+                    // Emergency Wellness Leave does not require
+                    // a 5-day advance application.
+                    if (empty($data['reason'])) {
+                        $validator->errors()->add(
+                            'reason',
+                            'Reason is required for Emergency Wellness Leave.'
+                        );
+                    }
+
+                    if ($data['total_days'] > 3) {
+                        $validator->errors()->add('attachment_file', 'Attachment file is required if the Wellness Leave is consecutive 3 Days');
+                    }
+                }
+
                 $employee = PersonnelEmployee::where(
                     'employee_id',
                     auth()->user()->employee_id
@@ -219,10 +265,10 @@ class PersonnelLeaveStoreRequest extends FormRequest
                     }
 
                     // Max 2 consecutive days
-                    if ($daysRequest > 2) {
+                    if ($daysRequest > 3) {
                         $validator->errors()->add(
                             'end_date',
-                            'Contractual employees may only avail up to 2 consecutive Wellness Leave days.'
+                            'Contractual employees may only avail up to 3 consecutive Wellness Leave days.'
                         );
                     }
 
@@ -233,13 +279,16 @@ class PersonnelLeaveStoreRequest extends FormRequest
                         ->whereHas('approvals', function ($q) {
                             $q->whereIn('status', ['approved', 'auto-approved']);
                         })
+                        ->whereDoesntHave('approvals', function ($q) {
+                            $q->where('status', 'rejected');
+                        })
                         ->get()
                         ->sum(function ($leave) {
                             return Carbon::parse($leave->start_date)
                                 ->diffInDays($leave->end_date) + 1;
                         });
 
-                    $totalAllowed = 2;
+                    $totalAllowed = 3;
 
                     $remaining = $totalAllowed - $usedDays;
 

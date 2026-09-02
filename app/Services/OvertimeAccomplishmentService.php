@@ -98,12 +98,13 @@ class OvertimeAccomplishmentService
         // Check if the employee belongs to the ORD division.
         // ORD employees skip Division Chief approval.
         $isORD = $movement->divisionBy &&
-            stripos($movement->divisionBy->div_name, 'ORD') !== false;
+            stripos($movement->divisionBy->id, 1) !== false;
 
         // Get approvers
         $sectionChief = $movement->sectionBy?->employeeBy?->employee_id;
         $divisionChief = $movement->divisionBy?->employeeBy?->employee_id;
-        $regionalDirector = Division::where('div_name', 'ORD')->first()?->employeeBy?->employee_id;
+        $regionalDirector = Division::where('id', 1)->first()?->employeeBy?->employee_id;
+        $hrOfficer = "0153";
 
         // True when the Section Chief and Division Chief are the same person.
         // In this case, only one approval is needed before the Regional Director.
@@ -122,6 +123,13 @@ class OvertimeAccomplishmentService
         }
 
         $approvers = [];
+
+        if ($hrOfficer) {
+            $approvers[] = [
+                'id' => $hrOfficer,
+                'type' => 'hr'
+            ];
+        }
 
         // Add Section Chief approval unless:
         // - the applicant is the Section Chief, or
@@ -201,8 +209,9 @@ class OvertimeAccomplishmentService
         ]);
     }
 
-    public function approveAccomplishment($accomplishmentId, $status)
+    public function approveAccomplishment($accomplishmentId, $status, $remarks)
     {
+
         $approverId = Auth::user()->employee_id;
 
         // Retrieve the logged-in user's approval record for this accomplishment.
@@ -232,10 +241,13 @@ class OvertimeAccomplishmentService
         // Record the approval timestamp.
         if ($status === 'approved') {
             $updateData['approved_at'] = now();
+            $updateData['returned_at'] = null;
         }
 
         if ($status === 'returned') {
             $updateData['returned_at'] = now();
+            $updateData['approved_at'] = null;
+            $updateData['remarks'] = $remarks;
         }
 
         // Update the current approval record.
@@ -243,61 +255,52 @@ class OvertimeAccomplishmentService
 
         $accomplishment = $approval->accomplishment;
 
+        if (!$accomplishment) {
+            return redirect()->back()->with(
+                'error',
+                'Accomplishment record not found.'
+            );
+        }
+
         if ($status === 'returned') {
 
+            // Update parent accomplishment
             $accomplishment->update([
                 'status' => 'returned',
+                'approved_at' => null,
+                'remarks' => $remarks,
                 'returned_at' => now(),
             ]);
 
+            // Update remarks on overtime approval
+            if ($accomplishment->overtimeApproval) {
+                $accomplishment->overtimeApproval->update([
+                    'status' => 'returned',
+                    'remarks' => $remarks,
+                    'returned_at' => now(),
+                ]);
+            }
+
+            // Get all approval records for this accomplishment
             $approvals = Accomplishment_approval::where(
                 'accomplishment_id',
                 $accomplishment->id
-            )->orderBy('level')->get();
+            )
+                ->orderBy('level')
+                ->get();
 
-            // Is the approver who clicked Return the last approver?
-            $isLastApprover = $approval->level == $approvals->max('level');
-
+            /*
+         * The approver who returned it remains "returned".
+         * Everyone else goes back to "waiting".
+         */
             foreach ($approvals as $approvalItem) {
 
-                // RD (last approver) returned
-                if ($isLastApprover) {
-
-                    if ($approvalItem->level == 1) {
-
-                        // Send it back to the first approver
-                        $approvalItem->update([
-                            'status' => 'returned',
-                            'approved_at' => null,
-                            'returned_at' => now(),
-                        ]);
-                    } else {
-
-                        $approvalItem->update([
-                            'status' => 'waiting',
-                            'approved_at' => null,
-                            'returned_at' => null,
-                        ]);
-                    }
-                } else {
-
-                    // Section or Division returned
-                    if ($approvalItem->id == $approval->id) {
-
-                        // Keep the approver who returned it as returned
-                        $approvalItem->update([
-                            'status' => 'waiting',
-                            'approved_at' => null,
-                            'returned_at' => now(),
-                        ]);
-                    } else {
-
-                        $approvalItem->update([
-                            'status' => 'returned',
-                            'approved_at' => null,
-                            'returned_at' => null,
-                        ]);
-                    }
+                if ($approvalItem->id != $approval->id) {
+                    $approvalItem->update([
+                        'status' => 'waiting',
+                        'approved_at' => null,
+                        'returned_at' => null,
+                    ]);
                 }
             }
 
